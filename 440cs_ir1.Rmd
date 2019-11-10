@@ -1,0 +1,12 @@
+---
+title: "Case Study V Interim Report I"
+author: "Jake Epstein"
+date: "11/10/2019"
+output: html_document
+---
+
+```{r}
+
+cardio = read.csv("data/dukecathr.csv")
+
+```
