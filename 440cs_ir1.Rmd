@@ -5,8 +5,50 @@ date: "11/10/2019"
 output: html_document
 ---
 
-```{r}
-
+```{r, echo = FALSE, message = FALSE}
+library(haven)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(cobalt)
+library(MatchIt)
+library(Matching)
+library(xtable)
+library(xgboost)
+library(randomForest)
+library(twang)
+library(VIM)
+library(lattice)
+library(mice)
 cardio = read.csv("data/dukecathr.csv")
-
+cardio$DEATH = as.factor(cardio$DEATH)
 ```
+
+```{r}
+ggplot(cardio, aes(x = DAYS2LKA, fill = DEATH)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Days to Death or Last Contact", fill = "Death", x = "Days to Death or Last Contact", y = "Density") +
+  theme_minimal()
+```
+This chart confirms what we expect. We see that most of the early deaths are accounted for but that longer term survivors often lose contact before a confirmed death.
+
+```{r}
+cardio_na = sapply(cardio, function(x) sum(is.na(x)))
+cardio_nas = data.frame(cardio_na, colnames(cardio), stringsAsFactors = FALSE) %>% 
+  mutate(cardio_na_p = 100*cardio_na/nrow(cardio)) %>%
+  arrange(cardio_na) %>% filter(cardio_na > 0) 
+cardio_nas$colnames.cardio. = factor(cardio_nas$colnames.cardio., levels = cardio_nas$colnames.cardio.)
+ggplot(cardio_nas, aes(x = colnames.cardio., y = cardio_na_p, fill = colnames.cardio.)) +
+  geom_bar(stat="identity", show.legend = FALSE) + 
+  labs(title = "Missing Data Proportions", x = "", y = "Percent Missing") +
+  theme_minimal() +
+  coord_flip()
+```
+
+```{r}
+# md.pattern(cardio %>% dplyr::select(DSSTROKE, DSMI))
+# cardio_aggr <- aggr(cardio,col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
+# labels=names(cardio),cex.axis=.7, gap=3, 
+# ylab=c("Proportion missing","Missingness Pattern"))
+```
+We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. 
