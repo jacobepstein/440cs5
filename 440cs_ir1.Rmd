@@ -44,11 +44,10 @@ ggplot(cardio_nas, aes(x = colnames.cardio., y = cardio_na_p, fill = colnames.ca
   theme_minimal() +
   coord_flip()
 ```
-
+We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. Most of the instances of large missing data are for measurements that were likely never taken(ie. maximum measured stenosis), or events(ie. strokes) that probably never occurred.
 ```{r}
 # md.pattern(cardio %>% dplyr::select(DSSTROKE, DSMI))
 # cardio_aggr <- aggr(cardio,col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
 # labels=names(cardio),cex.axis=.7, gap=3, 
 # ylab=c("Proportion missing","Missingness Pattern"))
 ```
-We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. 
