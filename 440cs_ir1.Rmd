@@ -51,3 +51,37 @@ We see several variables with missing data rates over 50 percent, and many more 
 # labels=names(cardio),cex.axis=.7, gap=3, 
 # ylab=c("Proportion missing","Missingness Pattern"))
 ```
+
+```{r}
+deathdf = data.frame()
+missingvals = list('DSSTROKE', 'DSMI', 'GRAFTST', 'DPCABG', 'DSCABG', 'DPPCI', 'LDL_R', 'HDL_R', 'TOTCHOL_R', 'DPMI', 'DSPCI', 'LVEF_R', 'CREATININE_R', 'LCXST', 'RCAST', 'PRXLADST', 'LADST', 'LMST', 'DIASBP_R', 'SYSBP_R', 'NUMDZV', 'CHFSEV', 'PULSE_R', 'S3')
+for(val in missingvals){
+  missing <- cardio[which(is.na(eval(parse(text=paste('cardio',"$",val,sep=""))))),]
+  notmissing <- cardio[which(!is.na(eval(parse(text=paste('cardio',"$",val,sep=""))))),]
+  percentdeathmissing = summary(missing$DEATH)[2] / (summary(missing$DEATH)[2] + summary(missing$DEATH)[1])
+  percentdeathnotmissing = summary(notmissing$DEATH)[2] / (summary(notmissing$DEATH)[2] + summary(notmissing$DEATH)[1])
+  deathdf[paste(val,'missing'), 'deathpercentage'] = percentdeathmissing
+  deathdf[paste(val,'missing'), 'subset'] = 'missing'
+  deathdf[paste(val, 'missing'), 'name'] = val
+  deathdf[paste(val,'observed'), 'deathpercentage'] = percentdeathnotmissing
+  deathdf[paste(val,'observed'), 'subset'] = 'observed'
+  deathdf[paste(val, 'observed'), 'name'] = val
+}
+
+ggplot(deathdf, aes(name, deathpercentage, fill = subset)) + 
+    geom_bar(stat = "identity", position = "dodge") + 
+    labs(title="Percentage Death: Missing VS Observed Data", 
+         x = "Variable", y = "% Deaths") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+In order to investigate how missing data affects the outcome of death, we plotted the percentage of deaths in every variable for the subset where data on the variable is missing, and the subset where data on the variable is observed. Through the graph, we can notice that five specific variables: CHSEV, CREATININE_R, PULSE_R, S3, and TOTCHOL_R have particularly large differences in percentage deaths for their observed versus missing subsets. For all four variables, there was a higher percentage of deaths for the subset of data that is missing. This suggests that for these variables, data may be MNAR (missing not at random). 
+
+
+```{r}
+marginplot(cardio[, c("CREATININE_R", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
+marginplot(cardio[, c("S3", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
+#CHFSEV, CREATININE_R, S3, PULSE_R, TOTCHOL_R
+marginplot(cardio[, c("PULSE_R", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
+#CHFSEV, CREATININE_R, S3, PULSE_R, TOTCHOL_R
+```
+We continued to investigate the five aforementioned variables and their effects on DAYS2LKA through margin plots. Although there were no noteworthy differences in distribution for CHSEV and TOTCHOL_R, we did find that missing data seems to effect DAYS2LKA for the variables CREATININE_R, S3, and PULSE_R. For all three of these variables, subsets of missing data have higher boxplots, indicating that patients missing data on these variables died later than patients with observed data. 
