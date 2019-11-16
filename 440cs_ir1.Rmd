@@ -21,8 +21,13 @@ library(VIM)
 library(lattice)
 library(mice)
 cardio = read.csv("data/dukecathr.csv")
+ 
+# CATEGORICAL OR BINARY VARIABLES:
 cardio$DEATH = as.factor(cardio$DEATH)
+cardio$GENDER = as.factor(cardio$GENDER)
+
 ```
+
 
 ```{r}
 ggplot(cardio, aes(x = DAYS2LKA, fill = DEATH)) +
@@ -44,7 +49,7 @@ ggplot(cardio_nas, aes(x = colnames.cardio., y = cardio_na_p, fill = colnames.ca
   theme_minimal() +
   coord_flip()
 ```
-We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. Most of the instances of large missing data are for measurements that were likely never taken(ie. maximum measured stenosis), or events(ie. strokes) that probably never occurred.
+We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. 
 ```{r}
 # md.pattern(cardio %>% dplyr::select(DSSTROKE, DSMI))
 # cardio_aggr <- aggr(cardio,col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
@@ -52,14 +57,21 @@ We see several variables with missing data rates over 50 percent, and many more 
 # ylab=c("Proportion missing","Missingness Pattern"))
 ```
 
+Most instances of large missing data are for events that likely never occurred, such as all the "days to first subsequent" variables like DSSTROKE (having a stroke in the future) and DSMI (having a non-fatal myocardianl infarction in the future), or "days to closest previous" variables like DPCABG (having a previous coronary artery bypass surgery).
+
+On the other hand, some variables with a significant amount of missing data do not have easily interpretable explanations. For example laboratory measurements such as LDL_R, HDL_R, and TOTCHOL_R have significant proportions of missing data, but there is no straightforward explanation to why these measurements may not have been recorded for certain patients.  
+
+
 ```{r}
 deathdf = data.frame()
 missingvals = list('DSSTROKE', 'DSMI', 'GRAFTST', 'DPCABG', 'DSCABG', 'DPPCI', 'LDL_R', 'HDL_R', 'TOTCHOL_R', 'DPMI', 'DSPCI', 'LVEF_R', 'CREATININE_R', 'LCXST', 'RCAST', 'PRXLADST', 'LADST', 'LMST', 'DIASBP_R', 'SYSBP_R', 'NUMDZV', 'CHFSEV', 'PULSE_R', 'S3')
 for(val in missingvals){
   missing <- cardio[which(is.na(eval(parse(text=paste('cardio',"$",val,sep=""))))),]
   notmissing <- cardio[which(!is.na(eval(parse(text=paste('cardio',"$",val,sep=""))))),]
+  
   percentdeathmissing = summary(missing$DEATH)[2] / (summary(missing$DEATH)[2] + summary(missing$DEATH)[1])
   percentdeathnotmissing = summary(notmissing$DEATH)[2] / (summary(notmissing$DEATH)[2] + summary(notmissing$DEATH)[1])
+  
   deathdf[paste(val,'missing'), 'deathpercentage'] = percentdeathmissing
   deathdf[paste(val,'missing'), 'subset'] = 'missing'
   deathdf[paste(val, 'missing'), 'name'] = val
@@ -70,18 +82,50 @@ for(val in missingvals){
 
 ggplot(deathdf, aes(name, deathpercentage, fill = subset)) + 
     geom_bar(stat = "identity", position = "dodge") + 
-    labs(title="Percentage Death: Missing VS Observed Data", 
+    labs(title="Percentage Deaths in Missing VS Observed Data", 
          x = "Variable", y = "% Deaths") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-In order to investigate how missing data affects the outcome of death, we plotted the percentage of deaths in every variable for the subset where data on the variable is missing, and the subset where data on the variable is observed. Through the graph, we can notice that five specific variables: CHSEV, CREATININE_R, PULSE_R, S3, and TOTCHOL_R have particularly large differences in percentage deaths for their observed versus missing subsets. For all four variables, there was a higher percentage of deaths for the subset of data that is missing. This suggests that for these variables, data may be MNAR (missing not at random). 
+In order to investigate how missing data affects the outcome of death, we plotted the percentage of deaths in every variable for the subset where data on the variable is missing, and the subset where data on the variable is observed. Through the graph, we can notice that five specific variables: CHFSEV, CREATININE_R, PULSE_R, S3, and TOTCHOL_R have particularly large differences in percentage deaths for their observed versus missing subsets. For all five variables, there was a higher percentage of deaths for the subset of data that is missing. This suggests that for these variables, there is a possibility that data may be MNAR (missing not at random). 
 
 
 ```{r}
 marginplot(cardio[, c("CREATININE_R", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
 marginplot(cardio[, c("S3", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
-#CHFSEV, CREATININE_R, S3, PULSE_R, TOTCHOL_R
+
 marginplot(cardio[, c("PULSE_R", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
-#CHFSEV, CREATININE_R, S3, PULSE_R, TOTCHOL_R
 ```
-We continued to investigate the five aforementioned variables and their effects on DAYS2LKA through margin plots. Although there were no noteworthy differences in distribution for CHSEV and TOTCHOL_R, we did find that missing data seems to effect DAYS2LKA for the variables CREATININE_R, S3, and PULSE_R. For all three of these variables, subsets of missing data have higher boxplots, indicating that patients missing data on these variables died later than patients with observed data. 
+We continued to investigate the five aforementioned variables and their effects on DAYS2LKA through margin plots. Although there were no noteworthy differences in distribution for CHSEV and TOTCHOL_R, we did find that missing data seems to effect DAYS2LKA for the variables CREATININE_R, S3, and PULSE_R. For all three of these variables, subsets of missing data have boxplots with higher means, indicating that patients missing data on these variables died later than patients with observed data. 
+
+We will proceed with visualizations that may help determine any similar patterns for missing data in different variables.
+
+```{r}
+cardio_aggr <- aggr(cardio[,c(38:41)],col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
+labels=names(cardio[,c(38:41)]),cex.axis=.7, gap=3, 
+ylab=c("Proportion missing","Missingness Pattern"))
+
+cardio_aggr <- aggr(cardio[,c(30:33)],col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
+labels=names(cardio[,c(30:33)]),cex.axis=.6, gap=3, 
+ylab=c("Proportion missing","Missingness Pattern"))
+```
+
+Through examining the variables with the highest proportion of missing data with missingness pattern visualizations, the following can be seen:
+
+1) When looking at GRAFTST, LCXST, LADST, and LMST, all four of these have missing values together 10.4% of the time. These are all catetherization results, so it could be the case the post-catetherization measurements were not done well or completely. It is likely that the missing data results from cases where the doctor just did not bother to measure all the metrics after catetherization, which would mean that the data is missing completely at random (MCAR).
+
+2) When looking at LDL_R, HDL_R, TOTCHOL_R, and CREATININE_R, the former three are missing together 37% of the time, and all four are missing 24% of the time. We continue to investigate this in the following graphs.
+
+```{r}
+marginplot(cardio[, c("CREATININE_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
+marginplot(cardio[, c("TOTCHOL_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
+marginplot(cardio[, c("HDL_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
+marginplot(cardio[, c("LDL_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
+```
+
+Through these margin plots, we can see there is a significant non-overlap in the distribution of YRCATH_G (year of catetherization) data depending on whether the laboratory measurements were missing versus observed. The majority of missing data on all these laboratory measurements comes from early years, while all the observed data comes from later years. A likely explanation is that these laboratory procedures were less common or accessible in the earlier years. From this, we can determine that this data is missing at random (MAR). 
+
+
+Through these exploratory data analysis and missing data visualizations, we can determine that significant portions of missing data are due to either events that never occurred and therefore cannot be recorded, possible negligence in recording certain measurements (MCAR), and reasons that depend on other observed variables, such as less accessible laboratory procedures in earlier years leading to missing data (MAR).
+
+
+
