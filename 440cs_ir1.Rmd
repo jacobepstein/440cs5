@@ -195,8 +195,6 @@ if(rerunMICE){
 
 densityplot(imp)
 
-imp$iteration
-
 #note, cant replace formula with formula_call here for some reason
 coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV))
 summary(pool(coximpute))
