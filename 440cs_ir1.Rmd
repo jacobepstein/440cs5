@@ -20,19 +20,26 @@ library(twang)
 library(VIM)
 library(lattice)
 library(mice)
+library(survival)
+library(survminer)
+
+
 cardio = read.csv("data/dukecathr.csv")
  
 # CATEGORICAL OR BINARY VARIABLES:
 cardio$DEATH = as.factor(cardio$DEATH)
 cardio$GENDER = as.factor(cardio$GENDER)
 
+
+
+select = dplyr::select
 ```
 
 
 ```{r}
-ggplot(cardio, aes(x = DAYS2LKA, fill = DEATH)) +
+ggplot(cardio, aes(x = DAYS2LKA, fill = DEATH==1)) +
   geom_density(alpha = 0.5) +
-  labs(title = "Days to Death or Last Contact", fill = "Death", x = "Days to Death or Last Contact", y = "Density") +
+  labs(title = "Days to Death or Last Contact", fill = "Dead", x = "Days to Death or Last Contact", y = "Density") +
   theme_minimal()
 ```
 This chart confirms what we expect. We see that most of the early deaths are accounted for but that longer term survivors often lose contact before a confirmed death.
@@ -128,4 +135,96 @@ Through these margin plots, we can see there is a significant non-overlap in the
 Through these exploratory data analysis and missing data visualizations, we can determine that significant portions of missing data are due to either events that never occurred and therefore cannot be recorded, possible negligence in recording certain measurements (MCAR), and reasons that depend on other observed variables, such as less accessible laboratory procedures in earlier years leading to missing data (MAR).
 
 
+### Build Model
 
+```{r, fig.height= 15, fig.width = 7}
+# select data we want
+# note: selected from fan's slides
+
+cardio_new = cardio %>%
+  select(
+    YRCATH_G, #year
+    AGE_G, #age
+    GENDER,
+    RACE_G,
+    HXSMOKE, #history of smoking
+    WEIGHT_R, # in kg
+    HEIGHT_R, # in cm
+    HXCEREB, #history of stroke
+    CHFSEV, # congestive heart failure severity
+    HXCOPD, # history of COPD
+    HXDIAB, # diabetes 
+    DPMI, #days to previous myocardial infarction. No MI encoded as missing --> will change this to a binary 
+    HXHYL, #history of hyperlipidemia 
+    S3, #S3 gallop
+    LMST, #maximum stenosis of left main artery
+    NUMDZV, #number of diseased vessels
+    DEATH,
+    DAYS2LKA # days until last known alive
+  ) %>%
+  mutate(BMI = WEIGHT_R / (HEIGHT_R / 100) ^ 2, HXMI = 1 - is.na(DPMI), DEATH = as.numeric(DEATH), RACE_G = as.factor(RACE_G),
+         CHFSEV = as.factor(CHFSEV), LMST = 100 * LMST, YRCATH_G = as.factor(YRCATH_G), AGE_G = as.factor(AGE_G)) %>%
+  select(-WEIGHT_R, -HEIGHT_R, -DPMI)
+```
+
+```{r}
+#complete case model
+
+formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV
+
+fit.coxph <- coxph(formula_call, data = cardio_new)
+
+ggsave("output/cox_graph_complete_case.png", ggforest(fit.coxph, data=cardio_new), device = "png", width = 7, height = 10, units = "in")
+
+```
+
+
+```{r}
+# use multiple imputation with mice
+#note: this takes a long time to run, so toggle rerunMICE to recalculate
+#think we could make this go faster by parsing every factor as an int before running MICE, then refactoring before running the coxph
+
+
+rerunMICE = FALSE
+
+if(rerunMICE){
+  imp = mice(cardio_new, m = 10)
+  saveRDS(imp, "data/imp.rds")
+} else {imp = readRDS("data/imp.rds")}
+
+
+densityplot(imp)
+
+imp$iteration
+
+#note, cant replace formula with formula_call here for some reason
+coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV))
+summary(pool(coximpute))
+```
+
+
+```{r}
+# compare methods
+
+mice_output = summary(pool(coximpute)) %>% select(estimate, std.error)
+mice_output$variable = rownames(mice_output)
+mice_output$procedure = "MICE"
+
+fixed_output = data.frame(estimate = summary(fit.coxph)$coefficients[,1],  std.error = summary(fit.coxph)$coefficients[,3])
+fixed_output$variable = rownames(fixed_output)
+fixed_output$procedure = "compete cases"
+
+output = rbind(mice_output, fixed_output)
+
+comparison_plot = ggplot(output, aes (x = variable, y = exp(estimate), color = procedure))+
+  geom_point(shape = "square", size = 3)+
+  geom_errorbar(aes(ymin = exp(estimate - std.error), ymax = exp(estimate + std.error))) +
+  geom_hline(yintercept = 1) +
+  coord_flip() +
+  labs(main = "Comparison of Procedures", x = "Variable", y = "Hazard Ratio", fill = "Procedure")+
+  theme_minimal()
+
+
+ggsave("output/cox_graph_compare.png", comparison_plot, device = "png", width = 7, height = 8, units = "in")
+
+```
