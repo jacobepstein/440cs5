@@ -95,9 +95,9 @@ marginplot(cardio[, c("S3", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch
 
 marginplot(cardio[, c("PULSE_R", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
 ```
-We continued to investigate the five aforementioned variables and their effects on DAYS2LKA through margin plots. Although there were no noteworthy differences in distribution for CHSEV and TOTCHOL_R, we did find that missing data seems to effect DAYS2LKA for the variables CREATININE_R, S3, and PULSE_R. For all three of these variables, subsets of missing data have boxplots with higher means, indicating that patients missing data on these variables died later than patients with observed data. 
+We continued to investigate the five aforementioned variables and their effects on DAYS2LKA through margin plots. Although there were no noteworthy differences in distribution for CHSEV and TOTCHOL_R, we did find that missing data seems to effect DAYS2LKA for the variables CREATININE_R, S3, and PULSE_R. For all three of these variables, subsets of missing data have boxplots with higher means, indicating that patients with missing data on these variables died later than patients with observed data. 
 
-We will proceed with visualizations that may help determine any similar patterns for missing data in different variables.
+We will proceed with visualizations that may help determine any simil`ar patterns for missing data in different variables.
 
 ```{r}
 cardio_aggr <- aggr(cardio[,c(38:41)],col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
