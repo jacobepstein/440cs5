@@ -221,6 +221,7 @@ comparison_plot = ggplot(output, aes (x = variable, y = exp(estimate), color = p
   geom_errorbar(aes(ymin = exp(estimate - 2 * std.error), ymax = exp(estimate + 2 * std.error))) +
   geom_hline(yintercept = 1) +
   coord_flip() +
+  scale_y_continuous(trans = "log2")+
   labs(main = "Comparison of Procedures", x = "Variable", y = "Hazard Ratio", fill = "Procedure")+
   theme_minimal()
 
