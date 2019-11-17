@@ -1,6 +1,6 @@
 ---
 title: "Case Study V Interim Report I"
-author: "Jake Epstein"
+author: "Jake Epstein, Daniel Spottiswood, Sahil Patel, Michael Tan, Man-Lin Hsiao"
 date: "11/10/2019"
 output: html_document
 ---
@@ -10,9 +10,6 @@ library(haven)
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
-library(cobalt)
-library(MatchIt)
-library(Matching)
 library(xtable)
 library(xgboost)
 library(randomForest)
@@ -175,7 +172,6 @@ formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSM
 fit.coxph <- coxph(formula_call, data = cardio_new)
 
 ggsave("output/cox_graph_complete_case.png", ggforest(fit.coxph, data=cardio_new), device = "png", width = 7, height = 10, units = "in")
-
 ```
 
 
@@ -226,4 +222,9 @@ comparison_plot = ggplot(output, aes (x = variable, y = exp(estimate), color = p
 
 ggsave("output/cox_graph_compare.png", comparison_plot, device = "png", width = 7, height = 8, units = "in")
 
+```
+
+```{r}
+pred <- survfit(fit.coxph, cardio_new)
+timepoints <- c(0, pred$YR_CATH_)
 ```
