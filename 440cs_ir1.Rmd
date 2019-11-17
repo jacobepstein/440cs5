@@ -218,7 +218,7 @@ output = rbind(mice_output, fixed_output)
 
 comparison_plot = ggplot(output, aes (x = variable, y = exp(estimate), color = procedure))+
   geom_point(shape = "square", size = 3)+
-  geom_errorbar(aes(ymin = exp(estimate - std.error), ymax = exp(estimate + std.error))) +
+  geom_errorbar(aes(ymin = exp(estimate - 2 * std.error), ymax = exp(estimate + 2 * std.error))) +
   geom_hline(yintercept = 1) +
   coord_flip() +
   labs(main = "Comparison of Procedures", x = "Variable", y = "Hazard Ratio", fill = "Procedure")+
