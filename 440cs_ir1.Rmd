@@ -117,7 +117,7 @@ Through examining the variables with the highest proportion of missing data with
 
 1) When looking at GRAFTST, LCXST, LADST, and LMST, all four of these have missing values together 10.4% of the time. These are all catetherization results, so it could be the case the post-catetherization measurements were not done well or completely. It is likely that the missing data results from cases where the doctor just did not bother to measure all the metrics after catetherization, which would mean that the data is missing completely at random (MCAR).
 
-2) When looking at LDL_R, HDL_R, TOTCHOL_R, and CREATININE_R, the former three are missing together 37% of the time, and all four are missing 24% of the time. We continue to investigate this in the following graphs.
+2) When looking at LDL_R, HDL_R, TOTCHOL_R, and CREATININE_R, the variables excluding CREATININE_R have missing values together 37% of the time, and all four are missing 24% of the time. We continue to investigate this in the following graphs.
 
 ```{r}
 marginplot(cardio[, c("CREATININE_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
@@ -225,6 +225,6 @@ ggsave("output/cox_graph_compare.png", comparison_plot, device = "png", width = 
 ```
 
 ```{r}
-pred <- survfit(fit.coxph, cardio_new)
-timepoints <- c(0, pred$YR_CATH_)
+#pred <- survfit(fit.coxph, cardio_new)
+#timepoints <- c(0, pred$YR_CATH_)
 ```
