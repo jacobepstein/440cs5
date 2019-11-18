@@ -177,6 +177,8 @@ ggsurvfit=(fit_gender,data=cardio,pval=TRUE)
 #note: I think we need to create an indicator var for AGE (i.e. under/over 20yr)
 fit_age=survfit(surv_ob~AGE_G,data=cardio)
 ggsurvfit=(fit_age,data=cardio,pval=TRUE)
+
+#note: need to explore more variables when code is debugged
 ```
 
 
