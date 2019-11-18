@@ -32,13 +32,13 @@ cardio$GENDER = as.factor(cardio$GENDER)
 select = dplyr::select
 ```
 
-
 ```{r}
 ggplot(cardio, aes(x = DAYS2LKA, fill = DEATH==1)) +
   geom_density(alpha = 0.5) +
   labs(title = "Days to Death or Last Contact", fill = "Dead", x = "Days to Death or Last Contact", y = "Density") +
   theme_minimal()
 ```
+
 This chart confirms what we expect. We see that most of the early deaths are accounted for but that longer term survivors often lose contact before a confirmed death.
 
 ```{r}
@@ -53,8 +53,9 @@ ggplot(cardio_nas, aes(x = colnames.cardio., y = cardio_na_p, fill = colnames.ca
   theme_minimal() +
   coord_flip()
 ```
+
 We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. 
-```{r}
+```{r,echo=FALSE}
 # md.pattern(cardio %>% dplyr::select(DSSTROKE, DSMI))
 # cardio_aggr <- aggr(cardio,col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
 # labels=names(cardio),cex.axis=.7, gap=3, 
@@ -90,6 +91,7 @@ ggplot(deathdf, aes(name, deathpercentage, fill = subset)) +
          x = "Variable", y = "% Deaths") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
 In order to investigate how missing data affects the outcome of death, we plotted the percentage of deaths in every variable for the subset where data on the variable is missing, and the subset where data on the variable is observed. Through the graph, we can notice that five specific variables: CHFSEV, CREATININE_R, PULSE_R, S3, and TOTCHOL_R have particularly large differences in percentage deaths for their observed versus missing subsets. For all five variables, there was a higher percentage of deaths for the subset of data that is missing. This suggests that for these variables, there is a possibility that data may be MNAR (missing not at random). 
 
 
@@ -181,7 +183,6 @@ ggsurvfit=(fit_age,data=cardio,pval=TRUE)
 #note: need to explore more variables when code is debugged
 ```
 
-
 ```{r}
 #complete case model
 
@@ -212,7 +213,6 @@ densityplot(imp)
 coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV))
 summary(pool(coximpute))
 ```
-
 
 ```{r}
 # compare methods
