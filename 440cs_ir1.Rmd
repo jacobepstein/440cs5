@@ -165,6 +165,22 @@ cardio_new = cardio %>%
 ```
 
 ```{r}
+#Kaplan-Meier curves
+
+surv_ob=Surv(time=cardio$DAYS2LKA,event=cardio$DEATH)
+
+#gender
+fit_gender=survfit(surv_ob~GENDER,data=cardio)
+ggsurvfit=(fit_gender,data=cardio,pval=TRUE)
+
+#age
+#note: I think we need to create an indicator var for AGE (i.e. under/over 20yr)
+fit_age=survfit(surv_ob~AGE_G,data=cardio)
+ggsurvfit=(fit_age,data=cardio,pval=TRUE)
+```
+
+
+```{r}
 #complete case model
 
 formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV
@@ -173,7 +189,6 @@ fit.coxph <- coxph(formula_call, data = cardio_new)
 
 ggsave("output/cox_graph_complete_case.png", ggforest(fit.coxph, data=cardio_new), device = "png", width = 7, height = 10, units = "in")
 ```
-
 
 ```{r}
 # use multiple imputation with mice
