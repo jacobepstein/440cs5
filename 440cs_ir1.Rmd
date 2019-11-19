@@ -168,33 +168,36 @@ cardio_new = cardio %>%
   select(-WEIGHT_R, -HEIGHT_R, -DPMI)
 ```
 
-
-
 ```{r}
 #Kaplan-Meier curves -- tool to decide what to put into the model we use
 
 #gender
-
 fit_gender=survfit(Surv(DAYS2LKA, DEATH) ~ GENDER, data=cardio_new)
 ggsurvplot(fit_gender,data=cardio_new,pval=TRUE)
 
 #age (low is <40)
+#fit_age=survfit(Surv(DAYS2LKA, DEATH) ~ AGE_G,data=cardio_new)
+#ggsurvplot(fit_age,data=cardio_new,pval=TRUE)
+
 cardio_new = cardio_new %>% 
   mutate(age_low = case_when(AGE_G %in% seq(1,4,1) ~ 1, AGE_G %in% seq(4,13,1) ~ 0))
+fit_age_low=survfit(Surv(DAYS2LKA, DEATH) ~ age_low,data=cardio_new)
+ggsurvplot(fit_age_low,data=cardio_new,pval=TRUE)
 
-fit_age=survfit(Surv(DAYS2LKA, DEATH) ~ age_low,data=cardio_new)
-ggsurvplot(fit_age,data=cardio_new,pval=TRUE)
+#race
+#fit_race=survfit(Surv(DAYS2LKA, DEATH) ~ RACE_G, data=cardio_new)
+#ggsurvplot(fit_race,data=cardio_new,pval=TRUE)
 
-#race (white v. non-white)
-fit_white=survfit(Surv(DAYS2LKA, DEATH) ~ RACE_G, data=cardio_new)
-ggsurvplot(fit_white,data=cardio_new,pval=TRUE)
+#CHF severity
+fit_sev=survfit(Surv(DAYS2LKA, DEATH) ~ CHFSEV, data=cardio_new)
+ggsurvplot(fit_sev, data=cardio_new, pval=TRUE)
 
-#note: can explore more variables when code is debugged (CHFSEV could be good... groups: {CHFSV=0, CHFSV!=0})
-
-ggsurvplot(survfit(Surv(DAYS2LKA, DEATH) ~ CHFSEV, data=cardio_new), data=cardio_new, pval=TRUE)
-
+#year of catheter
+#fit_yr=survfit(Surv(DAYS2LKA, DEATH) ~ YRCATH_G, data=cardio_new)
+#ggsurvplot(fit_yr, data=cardio_new, pval=TRUE)
 ```
 
+[TO DO: Kaplan-Meier curve commentary]
 
 ```{r}
 #complete case model
@@ -209,17 +212,16 @@ ggsave("output/cox_graph_complete_case.png", ggforest(fit.coxph, data=cardio_new
 The forest plot above illustrates the hazard ratios for different values of the covariates explored as estimated through Cox proportional hazards regression modelling. A hazard ratio >1 implies that individuals with the associated value for the covariate have an increased chance of dying. Intuitively, hazard ratios <1 imply that the individual indicate a decreased risk of dying.
 </br>
 </br>
-In order to run the Cox model, we established that our survival object would measure time with DAYS2LKA as we are working with censored, not interval, data, and we set the event to be 0 if the individual died and 1 if the individual stayed alive. We modelled the survival object using the following covariates: YRCATH_G, AGE_G, GENDER, RACE_G, HXSMOKE, HXCEREB, CHFSEV, HXCOPD, HXDIAB, HXHYL, S3, LMST, NUMDZV.
+In order to run the Cox model, we established that our survival object would measure time with DAYS2LKA as we are working with censored, not interval, data, and we set the event to be 0 if the individual died and 1 if the individual stayed alive. We modelled the survival object using the following covariates: year of cardiac catheter (categorised), age in years (categorised), gender, race, history of smoking (binary), history of cerbrovascular disease (binary), congestive heart failure severity (binary), history of chronic obsructive pulmonary disease (binary), history of diabetes (binary), history of hyperlipidemia (binary), third hear sound (binary), maximum stenosis of left main artery, number of significantly diseased valves.
 </br>
 </br>
-Our forest plot indicates that as an individual's age increases so does this person's risk of dying. Furthermore, the same trend occurs for white and non-white individuals, where non-white individuals are at higher risk of dying. Moreover, this trend appears in the variable CHFSEV as well, where individuals with a severity of 0 are the least at risk. Interestingly, YRCATH_G has decreasing risk as the group number moves from 1-3, then increases for groups 4-7.
+Our forest plot indicates that as an individual's age increases from 18-39 their risk of dying decreases; however, this trend reverses for individuals ages 39 and over. Furthermore, the same trend occurs for white and non-white individuals, where non-white individuals are at higher risk of dying. Moreover, this trend appears in the variable CHFSEV as well, where individuals with a severity of 0 are the least at risk. Interestingly, YRCATH_G has decreasing risk as the group number moves from 1-3, then increases for groups 4-7.
 
 
-[TODO: elaborate on age, U-shaped trend, not simply increasing],
-
-[TODO: use full names, not variable names, and give context to why the relationship do or don't make sense]
+[TODO: give context to why the relationship do or don't make sense]
 
 [TODO: justification for why we want to do MICE, why we chose the m we did, etc]
+
 
 ```{r}
 # use multiple imputation with mice
