@@ -135,9 +135,10 @@ Through these exploratory data analysis and missing data visualizations, we can 
 
 ### Build Model
 
-In order to address the issues associated with missing data, we built a complete case, and we estimated survival functions using both Cox proportional hazards regression modelling and Kaplan-Meier curves.
+In order to address the issues associated with missing data, we built a complete case, and estimated survival functions using both Kaplan-Meier curves and Cox proportional hazards regression modelling.
 
 [TODO: add more variables here to explore]
+
 ```{r, fig.height= 15, fig.width = 7}
 # select data we want
 # note: selected from fan's slides
@@ -168,6 +169,11 @@ cardio_new = cardio %>%
   select(-WEIGHT_R, -HEIGHT_R, -DPMI)
 ```
 
+The plots below depict the Kaplan-Meier curves (the risk of death over time) of variables we found to demonstrate clear effects that we could draw causal inference from. The plots also include the p-value dervied from conducting log-rank tests on the Kaplan-Meier curves.
+</br>
+</br>
+The Kaplan-Meier curves are depictions of the variable's survival function over time. The probability of survival begins at 1 (time = 0), and approaches 0 as time goes to $\infty$. The log-rank test determines whether the differences between a variable's Kaplan-Meier curves are statistically significant. All of the variables examined had p-values <0.0001, implying that they were statistically significant.
+
 ```{r}
 #Kaplan-Meier curves -- tool to decide what to put into the model we use
 
@@ -197,7 +203,16 @@ ggsurvplot(fit_sev, data=cardio_new, pval=TRUE)
 #ggsurvplot(fit_yr, data=cardio_new, pval=TRUE)
 ```
 
-[TO DO: Kaplan-Meier curve commentary]
+The Kaplan-Meier curves for the variable gender shows that females have a statistically significant higher risk of dying than males. In addition, the curves show that this difference in risk of death increases as time increases (the slope of the red, male, curve increases faster than the blue, female curve). 
+</br>
+</br>
+In order to determine whether there was an effect for age, we categorised an individual's age to  be low ($<$40) or high ($\geq$40). The Kaplan-Meier curves for this variable show a distinguished difference in the risk of death for the two groups. Namely, individuals who are 40 or older have a statisitcally significant increased risk of death. Furthermore, as time passes, this difference increases furhter; in other words, as time passes individuals who are 40 or older have an increasing risk of dying when compared to those under the age of 40. Contextually, this is a reasonable outcome as individuals who are older are more likely to die than their juniors.
+</br>
+</br>
+The Kaplan-Meier curves for congestive heart failure (CHF) severity indicate that individuals who never experienced CHF have the least risk of dying than those have had CHF. Moreover, the risk of dying increases as CHF severity increases. Intuitively, this is a feasible outcome as individuals with the most severe CHF are characterised by an "inability to perform any physical activity without discomfort" and potential discomfort while resting; logically, individuals who experience this level of pain are at higher risk of dying than those with less severe symptoms.
+</br>
+</br>
+We will explore these relationships further using Cox proportional hazards regression modelling. Hopefully, the Cox regression methodology will provide more insight into how these differences in risk of dying manifest at a more granular level.
 
 ```{r}
 #complete case model

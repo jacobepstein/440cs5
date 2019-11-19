@@ -462,7 +462,7 @@ ylab=c(&quot;Proportion missing&quot;,&quot;Missingness Pattern&quot;))</code></
 <p>Through these exploratory data analysis and missing data visualizations, we can determine that significant portions of missing data are due to either events that never occurred and therefore cannot be recorded, possible negligence in recording certain measurements (MCAR), and reasons that depend on other observed variables, such as less accessible laboratory procedures in earlier years leading to missing data (MAR).</p>
 <div id="build-model" class="section level3">
 <h3>Build Model</h3>
-<p>In order to address the issues associated with missing data, we built a complete case, and we estimated survival functions using both Cox proportional hazards regression modelling and Kaplan-Meier curves.</p>
+<p>In order to address the issues associated with missing data, we built a complete case, and estimated survival functions using both Kaplan-Meier curves and Cox proportional hazards regression modelling.</p>
 <p>[TODO: add more variables here to explore]</p>
 <pre class="r"><code># select data we want
 # note: selected from fan's slides
@@ -491,6 +491,7 @@ cardio_new = cardio %&gt;%
   mutate(BMI = WEIGHT_R / (HEIGHT_R / 100) ^ 2, HXMI = 1 - is.na(DPMI), DEATH = as.numeric(DEATH), RACE_G = as.factor(RACE_G),
          CHFSEV = as.factor(CHFSEV), LMST = 100 * LMST, YRCATH_G = as.factor(YRCATH_G), AGE_G = as.factor(AGE_G)) %&gt;%
   select(-WEIGHT_R, -HEIGHT_R, -DPMI)</code></pre>
+<p>The plots below depict the Kaplan-Meier curves (the risk of death over time) of variables we found to demonstrate clear effects that we could draw causal inference from. The plots also include the p-value dervied from conducting log-rank tests on the Kaplan-Meier curves. </br> </br> The Kaplan-Meier curves are depictions of the variable’s survival function over time. The probability of survival begins at 1 (time = 0), and approaches 0 as time goes to <span class="math inline">\(\infty\)</span>. The log-rank test determines whether the differences between a variable’s Kaplan-Meier curves are statistically significant. All of the variables examined had p-values &lt;0.0001, implying that they were statistically significant.</p>
 <pre class="r"><code>#Kaplan-Meier curves -- tool to decide what to put into the model we use
 
 #gender
@@ -517,7 +518,7 @@ ggsurvplot(fit_sev, data=cardio_new, pval=TRUE)</code></pre>
 <pre class="r"><code>#year of catheter
 #fit_yr=survfit(Surv(DAYS2LKA, DEATH) ~ YRCATH_G, data=cardio_new)
 #ggsurvplot(fit_yr, data=cardio_new, pval=TRUE)</code></pre>
-<p>[TO DO: Kaplan-Meier curve commentary]</p>
+<p>The Kaplan-Meier curves for the variable gender shows that females have a statistically significant higher risk of dying than males. In addition, the curves show that this difference in risk of death increases as time increases (the slope of the red, male, curve increases faster than the blue, female curve). </br> </br> In order to determine whether there was an effect for age, we categorised an individual’s age to be low ($&lt;<span class="math inline">\(40) or high (\)</span>$40). The Kaplan-Meier curves for this variable show a distinguished difference in the risk of death for the two groups. Namely, individuals who are 40 or older have a statisitcally significant increased risk of death. Furthermore, as time passes, this difference increases furhter; in other words, as time passes individuals who are 40 or older have an increasing risk of dying when compared to those under the age of 40. Contextually, this is a reasonable outcome as individuals who are older are more likely to die than their juniors. </br> </br> The Kaplan-Meier curves for congestive heart failure (CHF) severity indicate that individuals who never experienced CHF have the least risk of dying than those have had CHF. Moreover, the risk of dying increases as CHF severity increases. Intuitively, this is a feasible outcome as individuals with the most severe CHF are characterised by an “inability to perform any physical activity without discomfort” and potential discomfort while resting; logically, individuals who experience this level of pain are at higher risk of dying than those with less severe symptoms. </br> </br> We will explore these relationships further using Cox proportional hazards regression modelling. Hopefully, the Cox regression methodology will provide more insight into how these differences in risk of dying manifest at a more granular level.</p>
 <pre class="r"><code>#complete case model
 
 formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV
