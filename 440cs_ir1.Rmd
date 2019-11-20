@@ -232,13 +232,13 @@ fit_chol=survfit(Surv(DAYS2LKA,DEATH)~chol_levels,data=cardio_new)
 ggsurvplot(fit_chol,data=cardio_new,pval=TRUE)
 
 #high denisty lipid
-#cardio_new=cardio_new%>%
-#  mutate(hdl_levels=case_when(
-#    HDL_R<33~1,
-#    HDL_R>=33&HDL_R<39~2,
-#    HDL_R>=39&HDL_R<48~3,
-#    HDL_R>=48~4,
-#  ))
+cardio_new=cardio_new%>%
+ mutate(hdl_levels=case_when(
+   HDL_R<33~1,
+   HDL_R>=33&HDL_R<39~2,
+   HDL_R>=39&HDL_R<48~3,
+   HDL_R>=48~4,
+ ))
 #fit_hdl=survfit(Surv(DAYS2LKA,DEATH)~hdl_levels,data=cardio_new)
 #ggsurvplot(fit_hdl,data=cardio_new,pval=TRUE)
 
@@ -277,9 +277,13 @@ We will explore these relationships further using Cox proportional hazards regre
 [TO DO: finish write up^]
 
 ```{r}
-#complete case model
+cardio_new = cardio_new %>%
+  mutate(chol_levels = as.factor(chol_levels)) %>%
+  mutate(hdl_levels = as.factor(hdl_levels)) %>%
+  mutate(ldl_levels = as.factor(ldl_levels))
 
-formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levles + ldl_levels #note : all vars with "_levels" at the end are categorised by quantile
+#complete case model
+formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levels + ldl_levels #note : all vars with "_levels" at the end are categorised by quantile
 
 fit.coxph <- coxph(formula_call, data = cardio_new)
 
