@@ -215,7 +215,7 @@ cardio_new=cardio_new%>%
     CREATININE_R<0.9~1,
     CREATININE_R>=0.9&CREATININE_R<1~2,
     CREATININE_R>=1&CREATININE_R<1.3~3,
-    CREATININE_R>=1.3~4,
+    CREATININE_R>=1.3~4
   ))
 fit_serum=survfit(Surv(DAYS2LKA,DEATH)~creatinine_levels,data=cardio_new)
 ggsurvplot(fit_serum,data=cardio_new,pval=TRUE)
@@ -226,7 +226,7 @@ cardio_new=cardio_new%>%
     TOTCHOL_R<146~1,
     TOTCHOL_R>=146&TOTCHOL_R<174~2,
     TOTCHOL_R>=174&TOTCHOL_R<205~3,
-    TOTCHOL_R>=205~4,
+    TOTCHOL_R>=205~4
   ))
 fit_chol=survfit(Surv(DAYS2LKA,DEATH)~chol_levels,data=cardio_new)
 ggsurvplot(fit_chol,data=cardio_new,pval=TRUE)
@@ -237,7 +237,7 @@ cardio_new=cardio_new%>%
    HDL_R<33~1,
    HDL_R>=33&HDL_R<39~2,
    HDL_R>=39&HDL_R<48~3,
-   HDL_R>=48~4,
+   HDL_R>=48~4
  ))
 #fit_hdl=survfit(Surv(DAYS2LKA,DEATH)~hdl_levels,data=cardio_new)
 #ggsurvplot(fit_hdl,data=cardio_new,pval=TRUE)
@@ -248,7 +248,7 @@ cardio_new=cardio_new%>%
     LDL_R<77~1,
     LDL_R>=77&LDL_R<100~2,
     LDL_R>=100&LDL_R<127~3,
-    LDL_R>=127~4,
+    LDL_R>=127~4
   ))
 fit_ldl=survfit(Surv(DAYS2LKA,DEATH)~ldl_levels,data=cardio_new)
 ggsurvplot(fit_ldl,data=cardio_new,pval=TRUE)
@@ -281,6 +281,7 @@ cardio_new = cardio_new %>%
   mutate(chol_levels = as.factor(chol_levels)) %>%
   mutate(hdl_levels = as.factor(hdl_levels)) %>%
   mutate(ldl_levels = as.factor(ldl_levels)) %>%
+  mutate(creatinine_levels = as.factor(creatine_levels))
   select(-CREATININE_R, -TOTCHOL_R, -HDL_R, -LDL_R)
 
 #complete case model
