@@ -280,7 +280,8 @@ We will explore these relationships further using Cox proportional hazards regre
 cardio_new = cardio_new %>%
   mutate(chol_levels = as.factor(chol_levels)) %>%
   mutate(hdl_levels = as.factor(hdl_levels)) %>%
-  mutate(ldl_levels = as.factor(ldl_levels))
+  mutate(ldl_levels = as.factor(ldl_levels)) %>%
+  select(-CREATININE_R, -TOTCHOL_R, -HDL_R, -LDL_R)
 
 #complete case model
 formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levels + ldl_levels #note : all vars with "_levels" at the end are categorised by quantile
@@ -309,10 +310,10 @@ Our forest plot indicates that as an individual's age increases from 18-39 their
 #note: this takes a long time to run, so toggle rerunMICE to recalculate
 #think we could make this go faster by parsing every factor as an int before running MICE, then refactoring before running the coxph
 sum(cardio_new %>% is.na())/length(cardio_new)/nrow(cardio_new)
-#about 20% of data is missing--> m should be 20
+#about 10% of data is missing--> m should be 10
 
 
-rerunMICE = FALSE
+rerunMICE = TRUE
 
 if(rerunMICE){
   imp = mice(cardio_new, m = 10)
@@ -323,7 +324,7 @@ if(rerunMICE){
 densityplot(imp)
 
 #note, cant replace formula with formula_call here for some reason
-coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV))
+coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levels + ldl_levels))
 summary(pool(coximpute))
 ```
 
