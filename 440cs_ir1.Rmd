@@ -308,6 +308,9 @@ Our forest plot indicates that as an individual's age increases from 18-39 their
 # use multiple imputation with mice
 #note: this takes a long time to run, so toggle rerunMICE to recalculate
 #think we could make this go faster by parsing every factor as an int before running MICE, then refactoring before running the coxph
+sum(cardio_new %>% is.na())/length(cardio_new)/nrow(cardio_new)
+#about 20% of data is missing--> m should be 20
+
 
 rerunMICE = FALSE
 
