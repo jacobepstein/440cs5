@@ -162,7 +162,11 @@ cardio_new = cardio %>%
     LMST, #maximum stenosis of left main artery
     NUMDZV, #number of diseased vessels
     DEATH,
-    DAYS2LKA # days until last known alive
+    DAYS2LKA, # days until last known alive
+    CREATININE_R, #most recent serum creatinine
+    TOTCHOL_R, #total cholesterol
+    HDL_R, #high density lipid
+    LDL_R #low density lipid
   ) %>%
   mutate(BMI = WEIGHT_R / (HEIGHT_R / 100) ^ 2, HXMI = 1 - is.na(DPMI), DEATH = as.numeric(DEATH), RACE_G = as.factor(RACE_G),
          CHFSEV = as.factor(CHFSEV), LMST = 100 * LMST, YRCATH_G = as.factor(YRCATH_G), AGE_G = as.factor(AGE_G)) %>%
@@ -178,29 +182,73 @@ The Kaplan-Meier curves are depictions of the variable's survival function over 
 #Kaplan-Meier curves -- tool to decide what to put into the model we use
 
 #gender
-fit_gender=survfit(Surv(DAYS2LKA, DEATH) ~ GENDER, data=cardio_new)
+fit_gender=survfit(Surv(DAYS2LKA,DEATH)~GENDER,data=cardio_new)
 ggsurvplot(fit_gender,data=cardio_new,pval=TRUE)
 
 #age (low is <40)
-#fit_age=survfit(Surv(DAYS2LKA, DEATH) ~ AGE_G,data=cardio_new)
+#fit_age=survfit(Surv(DAYS2LKA,DEATH)~AGE_G,data=cardio_new)
 #ggsurvplot(fit_age,data=cardio_new,pval=TRUE)
 
-cardio_new = cardio_new %>% 
-  mutate(age_low = case_when(AGE_G %in% seq(1,4,1) ~ 1, AGE_G %in% seq(4,13,1) ~ 0))
-fit_age_low=survfit(Surv(DAYS2LKA, DEATH) ~ age_low,data=cardio_new)
+cardio_new=cardio_new%>%
+  mutate(age_low=case_when(AGE_G%in%seq(1,4,1)~1,AGE_G%in%seq(4,13,1)~0))
+fit_age_low=survfit(Surv(DAYS2LKA,DEATH)~age_low,data=cardio_new)
 ggsurvplot(fit_age_low,data=cardio_new,pval=TRUE)
 
 #race
-#fit_race=survfit(Surv(DAYS2LKA, DEATH) ~ RACE_G, data=cardio_new)
+#fit_race=survfit(Surv(DAYS2LKA,DEATH)~RACE_G,data=cardio_new)
 #ggsurvplot(fit_race,data=cardio_new,pval=TRUE)
 
 #CHF severity
-fit_sev=survfit(Surv(DAYS2LKA, DEATH) ~ CHFSEV, data=cardio_new)
-ggsurvplot(fit_sev, data=cardio_new, pval=TRUE)
+fit_sev=survfit(Surv(DAYS2LKA,DEATH)~CHFSEV,data=cardio_new)
+ggsurvplot(fit_sev,data=cardio_new,pval=TRUE)
 
 #year of catheter
-#fit_yr=survfit(Surv(DAYS2LKA, DEATH) ~ YRCATH_G, data=cardio_new)
-#ggsurvplot(fit_yr, data=cardio_new, pval=TRUE)
+#fit_yr=survfit(Surv(DAYS2LKA,DEATH)~YRCATH_G,data=cardio_new)
+#ggsurvplot(fit_yr,data=cardio_new,pval=TRUE)
+
+#serum creatinine
+cardio_new=cardio_new%>%
+  mutate(creatinine_levels=case_when(
+    CREATININE_R<0.9~1,
+    CREATININE_R>=0.9&CREATININE_R<1~2,
+    CREATININE_R>=1&CREATININE_R<1.3~3,
+    CREATININE_R>=1.3~4,
+  ))
+fit_serum=survfit(Surv(DAYS2LKA,DEATH)~creatinine_levels,data=cardio_new)
+ggsurvplot(fit_serum,data=cardio_new,pval=TRUE)
+
+#total cholesterol
+cardio_new=cardio_new%>%
+  mutate(chol_levels=case_when(
+    TOTCHOL_R<146~1,
+    TOTCHOL_R>=146&TOTCHOL_R<174~2,
+    TOTCHOL_R>=174&TOTCHOL_R<205~3,
+    TOTCHOL_R>=205~4,
+  ))
+fit_chol=survfit(Surv(DAYS2LKA,DEATH)~chol_levels,data=cardio_new)
+ggsurvplot(fit_chol,data=cardio_new,pval=TRUE)
+
+#high denisty lipid
+#cardio_new=cardio_new%>%
+#  mutate(hdl_levels=case_when(
+#    HDL_R<33~1,
+#    HDL_R>=33&HDL_R<39~2,
+#    HDL_R>=39&HDL_R<48~3,
+#    HDL_R>=48~4,
+#  ))
+#fit_hdl=survfit(Surv(DAYS2LKA,DEATH)~hdl_levels,data=cardio_new)
+#ggsurvplot(fit_hdl,data=cardio_new,pval=TRUE)
+
+#low denisty lipid
+cardio_new=cardio_new%>%
+  mutate(ldl_levels=case_when(
+    LDL_R<77~1,
+    LDL_R>=77&LDL_R<100~2,
+    LDL_R>=100&LDL_R<127~3,
+    LDL_R>=127~4,
+  ))
+fit_ldl=survfit(Surv(DAYS2LKA,DEATH)~ldl_levels,data=cardio_new)
+ggsurvplot(fit_ldl,data=cardio_new,pval=TRUE)
 ```
 
 The Kaplan-Meier curves for the variable gender shows that females have a statistically significant higher risk of dying than males. In addition, the curves show that this difference in risk of death increases as time increases (the slope of the red, male, curve increases faster than the blue, female curve). 
@@ -212,12 +260,23 @@ In order to determine whether there was an effect for age, we categorised an ind
 The Kaplan-Meier curves for congestive heart failure (CHF) severity indicate that individuals who never experienced CHF have the least risk of dying than those have had CHF. Moreover, the risk of dying increases as CHF severity increases. Intuitively, this is a feasible outcome as individuals with the most severe CHF are characterised by an "inability to perform any physical activity without discomfort" and potential discomfort while resting; logically, individuals who experience this level of pain are at higher risk of dying than those with less severe symptoms.
 </br>
 </br>
+creatinine
+</br>
+</br>
+cholesterol
+</br>
+</br>
+ldl
+</br>
+</br>
 We will explore these relationships further using Cox proportional hazards regression modelling. Hopefully, the Cox regression methodology will provide more insight into how these differences in risk of dying manifest at a more granular level.
+
+[TO DO: finish write up^]
 
 ```{r}
 #complete case model
 
-formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV
+formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levles + ldl_levels #note : all vars with "_levels" at the end are categorised by quantile
 
 fit.coxph <- coxph(formula_call, data = cardio_new)
 
