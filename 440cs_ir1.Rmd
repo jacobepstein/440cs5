@@ -2,7 +2,9 @@
 title: "Case Study V Interim Report I"
 author: "Jake Epstein, Daniel Spottiswood, Sahil Patel, Michael Tan, Man-Lin Hsiao"
 date: "11/10/2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r, echo = FALSE, message = FALSE}
@@ -19,6 +21,7 @@ library(lattice)
 library(mice)
 library(survival)
 library(survminer)
+
 
 
 cardio = read.csv("data/dukecathr.csv")
