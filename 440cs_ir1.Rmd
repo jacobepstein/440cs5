@@ -281,7 +281,7 @@ cardio_new = cardio_new %>%
   mutate(chol_levels = as.factor(chol_levels)) %>%
   mutate(hdl_levels = as.factor(hdl_levels)) %>%
   mutate(ldl_levels = as.factor(ldl_levels)) %>%
-  mutate(creatinine_levels = as.factor(creatine_levels))
+  mutate(creatinine_levels = as.factor(creatinine_levels)) %>%
   select(-CREATININE_R, -TOTCHOL_R, -HDL_R, -LDL_R)
 
 #complete case model
