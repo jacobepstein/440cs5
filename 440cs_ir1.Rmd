@@ -167,6 +167,23 @@ missing_plot = ggplot(cardio_nas, aes(x = colnames.cardio., y = cardio_na_p, fil
   coord_flip()
 ```
 
+We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range.
+
+Most instances of large missing data are for events that likely never occurred, such as all the "days to first subsequent" variables like DSSTROKE (having a stroke in the future) and DSMI (having a non-fatal myocardianl infarction in the future), or "days to closest previous" variables like DPCABG (having a previous coronary artery bypass surgery).
+
+On the other hand, some variables with a significant amount of missing data do not have easily interpretable explanations. For example laboratory measurements such as LDL_R, HDL_R, and TOTCHOL_R have significant proportions of missing data, but there is no straightforward explanation to why these measurements may not have been recorded for certain patients.  
+
+We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. 
+```{r,echo=FALSE}
+# md.pattern(cardio %>% dplyr::select(DSSTROKE, DSMI))
+# cardio_aggr <- aggr(cardio,col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
+# labels=names(cardio),cex.axis=.7, gap=3, 
+# ylab=c("Proportion missing","Missingness Pattern"))
+```
+
+Most instances of large missing data are for events that likely never occurred, such as all the "days to first subsequent" variables like DSSTROKE (having a stroke in the future) and DSMI (having a non-fatal myocardianl infarction in the future), or "days to closest previous" variables like DPCABG (having a previous coronary artery bypass surgery).
+
+On the other hand, some variables with a significant amount of missing data do not have easily interpretable explanations. For example laboratory measurements such as LDL_R, HDL_R, and TOTCHOL_R have significant proportions of missing data, but there is no straightforward explanation to why these measurements may not have been recorded for certain patients.  
 
 
 ```{r, fig.height=3, fig.width=7}
@@ -240,7 +257,7 @@ marginplot(cardio[, c("HDL_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, 
 marginplot(cardio[, c("LDL_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
 ```
 
-Through these margin plots, we can see there is a significant non-overlap in the distribution of YRCATH_G (year of catetherization) data depending on whether the laboratory measurements were missing versus observed. The majority of missing data on all these laboratory measurements comes from early years, while all the observed data comes from later years. A likely explanation is that these laboratory procedures were less common or accessible in the earlier years. From this, we can determine that this data is missing at random (MAR). 
+Through these margin plots, we can see there is a significant non-overlap in the distribution of YRCATH_G (year of catetherization) data depending on whether the laboratory measurements were missing versus observed. The majority of missing data on all these laboratory measurements comes from early years, while all the observed data comes from later years. A likely explanation is that these laboratory procedures were less common or accessible in the earlier years which would mean that this data is missing at random (MAR). 
 
 
 
