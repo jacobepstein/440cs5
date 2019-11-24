@@ -416,12 +416,14 @@ cardio_new = cardio_new %>%
   mutate(creatinine_levels = as.factor(creatinine_levels)) %>%
   select(-CREATININE_R, -TOTCHOL_R, -HDL_R, -LDL_R)
 
+cardio_new_no_nas = na.omit(cardio_new)
+
 #complete case model
 formula_call = Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levels + ldl_levels #note : all vars with "_levels" at the end are categorised by quantile
 
 fit.coxph <- coxph(formula_call, data = cardio_new)
 
-ggsave("output/cox_graph_complete_case.png", ggforest(fit.coxph, data=cardio_new), device = "png", width = 7, height = 7, units = "in")
+ggsave("output/cox_graph_complete_case.png", ggforest(fit.coxph, data=cardio_new), device = "png", width = 7, height = 8, units = "in")
 ```
 ![](output/cox_graph_complete_case.png)
 The forest plot above illustrates the hazard ratios for different values of the covariates explored as estimated through Cox proportional hazards regression modelling. A hazard ratio >1 implies that individuals with the associated value for the covariate have an increased chance of dying. Intuitively, hazard ratios <1 imply that the individual indicate a decreased risk of dying.
@@ -436,11 +438,11 @@ Our forest plot indicates that as an individual's age increases from 18-39 their
 [TODO: justification for why we want to do MICE, why we chose the m we did, etc]
 
 ### Multiple Imputation
-```{r, eval = FALSE}
+```{r}
 # use multiple imputation with mice
 #note: this takes a long time to run, so toggle rerunMICE to recalculate
 #think we could make this go faster by parsing every factor as an int before running MICE, then refactoring before running the coxph
-sum(cardio_new %>% is.na())/length(cardio_new)/nrow(cardio_new)
+#sum(cardio_new %>% is.na())/length(cardio_new)/nrow(cardio_new)
 #about 10% of data is missing--> m should be 10
 
 
@@ -456,7 +458,7 @@ densityplot(imp)
 
 #note, cant replace formula with formula_call here for some reason
 coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levels + ldl_levels))
-summary(pool(coximpute))
+#summary(pool(coximpute))
 ```
 
 ### Comparison to Complete Case Model
