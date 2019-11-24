@@ -1,5 +1,5 @@
 ---
-title: "Case Study V Interim Report I"
+title: "Case Study V Final Report"
 author: "Jake Epstein, Daniel Spottiswood, Sahil Patel, Michael Tan, Man-Lin Hsiao"
 date: "11/10/2019"
 output:
@@ -30,23 +30,24 @@ cardio = read.csv("data/dukecathr.csv")
 cardio$DEATH = as.factor(cardio$DEATH)
 cardio$GENDER = as.factor(cardio$GENDER)
 
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
 select = dplyr::select
 ```
+## Introduction
 
-###EDA
+The goal of this case study is to evaluate risk factors for death for Duke Cardiology Patients. Data comes from Duke Databank for Cardiovascular Diseases and includes observations on about ~85,000 patients. As this is medical data, much of the data is missing. In order to account for biases from missing data, we will utilize multiple imputation. We will create and interpret a Cox Model on complete case data in order to evaluate risk factors for death. We will then compare that model to a model built with imputed data in order to evaluate the impact of missing data on the model.
+
+
+## Exploratory Data Analysis
 ```{r}
-ggplot(cardio, aes(x = DAYS2LKA, fill = DEATH==1)) +
+p6 = ggplot(cardio, aes(x = DAYS2LKA, fill = DEATH==1)) +
   geom_density(alpha = 0.5) +
   labs(title = "Days to Death or Last Contact", fill = "Dead", x = "Days to Death or Last Contact", y = "Density") +
   theme_minimal()
 ```
 
-This chart confirms what we expect. We see that most of the early deaths are accounted for but that longer term survivors often lose contact before a confirmed death.
-
-
-####Performing EDA on demographics variables:
-```{r}
+```{r, fig.width=7, fig.height=3}
 eda_cardio = cardio %>%
   mutate(DEATHNUM = as.integer(as.character(DEATH)))
 
@@ -113,65 +114,62 @@ agehist$AGE_CAT[agehist$AGE_CAT == 13] <- "80+"
 
 p1 = ggplot(data=racehist, aes(x=RACE_CAT, y=death_rate)) +
   geom_bar(stat="identity", fill="steelblue")+
-  ggtitle("Death Rate by Race")
+  ggtitle("Death Rate by Race") +
+  labs(x = "", y = "Death Rate")+
   theme_minimal()
 
 p2 = ggplot(data=smokehist, aes(x=HXSMOKE, y=death_rate)) +
   geom_bar(stat="identity", fill="steelblue")+
-  ggtitle("Death Rate by Smoking History")
+  ggtitle("Death Rate by Smoking History") +
+  labs(x = "", y = "Death Rate")+
   theme_minimal()
 
 p3 = ggplot(data=agehist, aes(x=AGE_CAT, y=death_rate)) +
   geom_bar(stat="identity", fill="steelblue")+
-  ggtitle("Death Rate by Age") + 
+  ggtitle("Death Rate by Age") +
+  labs(x = "", y = "Death Rate")+
   theme_minimal()
 
 p4 = ggplot(data=genderhist, aes(x=GENDER, y=death_rate)) +
   geom_bar(stat="identity", fill="steelblue")+
   ggtitle("Death Rate by Gender") + 
+  labs(x = "", y = "Death Rate")+
   theme_minimal()
 
 p5 = ggplot(data=yearhist, aes(x=YRCATH_G, y=death_rate)) +
   geom_bar(stat="identity", fill="steelblue")+
   ggtitle("Death Rate by Year of Catetherization") + 
+  labs(x = "", y = "Death Rate")+
   theme_minimal()
 
-grid.arrange(
-  grobs = list(p2, p4, p1),
-  widths = c(2, 1, 1),
-  layout_matrix = rbind(c(1, 2, 2),
-                        c(3, 3, 3))
-)
-grid.arrange(p5, p3, nrow = 2)
+ggsave("output/eda.png", grid.arrange(arrangeGrob(p6, p5, p3, nrow = 3), arrangeGrob(p2, p4, p1, nrow = 3), nrow = 1), device = "png", width = 14, height = 8, units = "in")
 
 ```
-To explore how demographics of patients relate to death rate, we plotted death rate by smoking history, by gender, by race, by year of catetherization, and by age. We see that smokers have higher death rate than non-smokers, females have higher death rate than males, and Caucasians have the highest death rate followed by Other races, then African Americans. However, these differences are relatively small. On the other hand, we can see a very significant pattern in death rate by year of catetherization as well as age. 
 
-The earlier the catetherization was performed, the higher death rate - this can likely be attributed to progress being made in medicine as catetherization becomes increasingly safer and more effectively treating patients as years progress. 
+![](output/eda.png)
+First, we examine the distribution of days to death or last known contact. This chart confirms what we expect. We see that most of the early deaths are accounted for but that longer term survivors often lose contact before a confirmed death.
 
-The youngest and oldest age groups have highest death rates. Death rates for 18-24 year olds are high, then decreases progressively until the 30-34 age group, then increases progressively after that. 
+To explore how demographics of patients relate to death rate, we plotted death rate by smoking history, by gender, by race, by year of catetherization, and by age. We see that smokers have higher death rate than non-smokers, females have higher death rate than males, and Caucasians have the highest death rate followed by Other races, then African Americans. However, these differences are relatively small. On the other hand, we can see a very significant pattern in death rate by year of catetherization as well as age. The earlier the catetherization was performed, the higher death rate - this can likely be attributed to progress being made in medicine as catetherization becomes increasingly safer and more effectively treating patients as years progress. The youngest and oldest age groups have highest death rates. Death rates for 18-24 year olds are high, then decreases progressively until the 30-34 age group, then increases progressively after that. 
 
-####Exploring Missing Data:
+## Missing Data
 ```{r}
 cardio_na = sapply(cardio, function(x) sum(is.na(x)))
 cardio_nas = data.frame(cardio_na, colnames(cardio), stringsAsFactors = FALSE) %>% 
   mutate(cardio_na_p = 100*cardio_na/nrow(cardio)) %>%
   arrange(cardio_na) %>% filter(cardio_na > 0) 
 cardio_nas$colnames.cardio. = factor(cardio_nas$colnames.cardio., levels = cardio_nas$colnames.cardio.)
-ggplot(cardio_nas, aes(x = colnames.cardio., y = cardio_na_p, fill = colnames.cardio.)) +
+
+
+missing_plot = ggplot(cardio_nas, aes(x = colnames.cardio., y = cardio_na_p, fill = colnames.cardio.)) +
   geom_bar(stat="identity", show.legend = FALSE) + 
   labs(title = "Missing Data Proportions", x = "", y = "Percent Missing") +
   theme_minimal() +
   coord_flip()
 ```
 
-We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. 
 
-Most instances of large missing data are for events that likely never occurred, such as all the "days to first subsequent" variables like DSSTROKE (having a stroke in the future) and DSMI (having a non-fatal myocardianl infarction in the future), or "days to closest previous" variables like DPCABG (having a previous coronary artery bypass surgery).
 
-On the other hand, some variables with a significant amount of missing data do not have easily interpretable explanations. For example laboratory measurements such as LDL_R, HDL_R, and TOTCHOL_R have significant proportions of missing data, but there is no immediate explanation to why these measurements may not have been recorded for certain patients.  
-
-```{r}
+```{r, fig.height=3, fig.width=7}
 deathdf = data.frame()
 missingvals = list('DSSTROKE', 'DSMI', 'GRAFTST', 'DPCABG', 'DSCABG', 'DPPCI', 'LDL_R', 'HDL_R', 'TOTCHOL_R', 'DPMI', 'DSPCI', 'LVEF_R', 'CREATININE_R', 'LCXST', 'RCAST', 'PRXLADST', 'LADST', 'LMST', 'DIASBP_R', 'SYSBP_R', 'NUMDZV', 'CHFSEV', 'PULSE_R', 'S3')
 for(val in missingvals){
@@ -189,33 +187,44 @@ for(val in missingvals){
   deathdf[paste(val, 'observed'), 'name'] = val
 }
 
-ggplot(deathdf, aes(name, deathpercentage, fill = subset)) + 
+deaths_v_missing = ggplot(deathdf, aes(name, deathpercentage, fill = subset)) + 
     geom_bar(stat = "identity", position = "dodge") + 
     labs(title="Percentage Deaths in Missing VS Observed Data", 
          x = "Variable", y = "% Deaths") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme_minimal() +
+  coord_flip()
+
+ggsave("output/missing_eda.png", grid.arrange(missing_plot, deaths_v_missing, nrow = 1), device = "png", width = 14, height = 6, units = "in")
+
 ```
+![](output/missing_eda.png)
+
+We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. Most instances of large missing data are for events that likely never occurred, such as all the "days to first subsequent" variables like DSSTROKE (having a stroke in the future) and DSMI (having a non-fatal myocardianl infarction in the future), or "days to closest previous" variables like DPCABG (having a previous coronary artery bypass surgery).On the other hand, some variables with a significant amount of missing data do not have easily interpretable explanations. For example laboratory measurements such as LDL_R, HDL_R, and TOTCHOL_R have significant proportions of missing data, but there is no immediate explanation to why these measurements may not have been recorded for certain patients.  
+</br>
+</br>
 In order to investigate how missing data affects the outcome of death, we plotted the percentage of deaths in every variable for the subset where data on the variable is missing, and the subset where data on the variable is observed. Through the graph, we can notice that five specific variables: CHFSEV, CREATININE_R, PULSE_R, S3, and TOTCHOL_R have particularly large differences in percentage deaths for their observed versus missing subsets. For all five variables, there was a higher percentage of deaths for the subset of data that is missing. This suggests that for these variables, there is a possibility that data may be MAR (missing at random), since missingness is related to death, an observed variable. 
 
-```{r}
+```{r, fig.width=7, fig.height=3, dev = "png"}
+par(mfrow = c(1,3))
 marginplot(cardio[, c("CREATININE_R", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
 marginplot(cardio[, c("S3", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
-
 marginplot(cardio[, c("PULSE_R", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
+
 ```
 We continued to investigate the five aforementioned variables and their effects on DAYS2LKA through margin plots. Although there were no noteworthy differences in distribution for CHSEV and TOTCHOL_R, we did find that missing data seems to effect DAYS2LKA for the variables CREATININE_R, S3, and PULSE_R. For all three of these variables, subsets of missing data have boxplots with higher means, indicating that patients with missing data on these variables died later than patients with observed data. Again, this suggests possible MAR (missing at random), since missingness is related to days to last known alive, an observed variable. 
 
 We will proceed with visualizations that may help determine any similar patterns for missing data in different variables.
 
-```{r}
-cardio_aggr <- aggr(cardio[,c(38:41)],col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
+```{r, eval = FALSE}
+aggr(cardio[,c(38:41)],col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
 labels=names(cardio[,c(38:41)]),cex.axis=.7, gap=3, 
-ylab=c("Proportion missing","Missingness Pattern"))
+ylab=c("Proportion missing","Missingness Pattern"), plot = TRUE)
 
-cardio_aggr <- aggr(cardio[,c(30:33)],col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
+aggr(cardio[,c(30:33)],col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
 labels=names(cardio[,c(30:33)]),cex.axis=.6, gap=3, 
-ylab=c("Proportion missing","Missingness Pattern"))
+ylab=c("Proportion missing","Missingness Pattern"), plot = TRUE)
 ```
+![](output/aggr.png)
 
 Through examining the variables with the highest proportion of missing data with missingness pattern visualizations, the following can be seen:
 
@@ -223,7 +232,8 @@ Through examining the variables with the highest proportion of missing data with
 
 2) When looking at LDL_R, HDL_R, TOTCHOL_R, and CREATININE_R, the variables excluding CREATININE_R have missing values together 37% of the time, and all four are missing 24% of the time. We continue to investigate this in the following graphs.
 
-```{r}
+```{r, fig.width=7, fig.height=3, dev = "png"}
+par(mfrow = c(1,4))
 marginplot(cardio[, c("CREATININE_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
 marginplot(cardio[, c("TOTCHOL_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
 marginplot(cardio[, c("HDL_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
@@ -280,15 +290,14 @@ cardio_new = cardio %>%
 The plots below depict the Kaplan-Meier curves (the risk of death over time) of variables we found to demonstrate clear effects that we could draw causal inference from. The plots also include the p-value dervied from conducting log-rank tests on the Kaplan-Meier curves.
 </br>
 </br>
-The Kaplan-Meier curves are depictions of the variable's survival function over time. The probability of survival begins at 1 (time = 0), and approaches 0 as time goes to $\infty$. The log-rank test determines whether the differences between a variable's Kaplan-Meier curves are statistically significant. All of the variables examined had p-values <0.0001, implying that they were statistically significant.
+The Kaplan-Meier curves are depictions of the variable's survival function over time. The probability of survival begins at 1 (time = 0), and approaches 0 as time goes to infinity. The log-rank test determines whether the differences between a variable's Kaplan-Meier curves are statistically significant. All of the variables examined had p-values <0.0001, implying that they were statistically significant.
 
 ```{r}
 #Kaplan-Meier curves -- tool to decide what to put into the model we use
 
 #gender
 fit_gender=survfit(Surv(DAYS2LKA,DEATH)~GENDER,data=cardio_new)
-ggsurvplot(fit_gender,data=cardio_new,pval=TRUE)
-
+a = ggsurvplot(fit_gender,data=cardio_new,pval=TRUE)
 #age (low is <40)
 #fit_age=survfit(Surv(DAYS2LKA,DEATH)~AGE_G,data=cardio_new)
 #ggsurvplot(fit_age,data=cardio_new,pval=TRUE)
@@ -358,7 +367,7 @@ ggsurvplot(fit_ldl,data=cardio_new,pval=TRUE)
 The Kaplan-Meier curves for the variable gender shows that females have a statistically significant higher risk of dying than males. In addition, the curves show that this difference in risk of death increases as time increases (the slope of the red, male, curve increases faster than the blue, female curve). 
 </br>
 </br>
-In order to determine whether there was an effect for age, we categorised an individual's age to  be low ($<$40) or high ($\geq$40). The Kaplan-Meier curves for this variable show a distinguished difference in the risk of death for the two groups. Namely, individuals who are 40 or older have a statisitcally significant increased risk of death. Furthermore, as time passes, this difference increases furhter; in other words, as time passes individuals who are 40 or older have an increasing risk of dying when compared to those under the age of 40. Contextually, this is a reasonable outcome as individuals who are older are more likely to die than their juniors.
+In order to determine whether there was an effect for age, we categorised an individual's age to  be low (<40) or high (>=40). The Kaplan-Meier curves for this variable show a distinguished difference in the risk of death for the two groups. Namely, individuals who are 40 or older have a statisitcally significant increased risk of death. Furthermore, as time passes, this difference increases furhter; in other words, as time passes individuals who are 40 or older have an increasing risk of dying when compared to those under the age of 40. Contextually, this is a reasonable outcome as individuals who are older are more likely to die than their juniors.
 </br>
 </br>
 The Kaplan-Meier curves for congestive heart failure (CHF) severity indicate that individuals who never experienced CHF have the least risk of dying than those have had CHF. Moreover, the risk of dying increases as CHF severity increases. Intuitively, this is a feasible outcome as individuals with the most severe CHF are characterised by an "inability to perform any physical activity without discomfort" and potential discomfort while resting; logically, individuals who experience this level of pain are at higher risk of dying than those with less severe symptoms.
@@ -377,7 +386,7 @@ We will explore these relationships further using Cox proportional hazards regre
 
 [TO DO: finish write up^]
 
-```{r}
+```{r, eval = FALSE}
 cardio_new = cardio_new %>%
   mutate(chol_levels = as.factor(chol_levels)) %>%
   mutate(hdl_levels = as.factor(hdl_levels)) %>%
@@ -407,7 +416,7 @@ Our forest plot indicates that as an individual's age increases from 18-39 their
 [TODO: justification for why we want to do MICE, why we chose the m we did, etc]
 
 
-```{r}
+```{r, eval = FALSE}
 # use multiple imputation with mice
 #note: this takes a long time to run, so toggle rerunMICE to recalculate
 #think we could make this go faster by parsing every factor as an int before running MICE, then refactoring before running the coxph
@@ -415,7 +424,7 @@ sum(cardio_new %>% is.na())/length(cardio_new)/nrow(cardio_new)
 #about 10% of data is missing--> m should be 10
 
 
-rerunMICE = TRUE
+rerunMICE = FALSE
 
 if(rerunMICE){
   imp = mice(cardio_new, m = 10)
@@ -426,34 +435,34 @@ if(rerunMICE){
 densityplot(imp)
 
 #note, cant replace formula with formula_call here for some reason
-coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levels + ldl_levels))
-summary(pool(coximpute))
+#coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levels + ldl_levels))
+#summary(pool(coximpute))
 ```
 
 ```{r}
 # compare methods
-
-mice_output = summary(pool(coximpute)) %>% select(estimate, std.error)
-mice_output$variable = rownames(mice_output)
-mice_output$procedure = "MICE"
-
-fixed_output = data.frame(estimate = summary(fit.coxph)$coefficients[,1],  std.error = summary(fit.coxph)$coefficients[,3])
-fixed_output$variable = rownames(fixed_output)
-fixed_output$procedure = "compete cases"
-
-output = rbind(mice_output, fixed_output)
-
-comparison_plot = ggplot(output, aes (x = variable, y = exp(estimate), color = procedure))+
-  geom_point(shape = "square", size = 3)+
-  geom_errorbar(aes(ymin = exp(estimate - 2 * std.error), ymax = exp(estimate + 2 * std.error))) +
-  geom_hline(yintercept = 1) +
-  coord_flip() +
-  scale_y_continuous(trans = "log2")+
-  labs(main = "Comparison of Procedures", x = "Variable", y = "Hazard Ratio", fill = "Procedure")+
-  theme_minimal()
-
-
-ggsave("output/cox_graph_compare.png", comparison_plot, device = "png", width = 7, height = 8, units = "in")
+# 
+# mice_output = summary(pool(coximpute)) %>% select(estimate, std.error)
+# mice_output$variable = rownames(mice_output)
+# mice_output$procedure = "MICE"
+# 
+# fixed_output = data.frame(estimate = summary(fit.coxph)$coefficients[,1],  std.error = summary(fit.coxph)$coefficients[,3])
+# fixed_output$variable = rownames(fixed_output)
+# fixed_output$procedure = "compete cases"
+# 
+# output = rbind(mice_output, fixed_output)
+# 
+# comparison_plot = ggplot(output, aes (x = variable, y = exp(estimate), color = procedure))+
+#   geom_point(shape = "square", size = 3)+
+#   geom_errorbar(aes(ymin = exp(estimate - 2 * std.error), ymax = exp(estimate + 2 * std.error))) +
+#   geom_hline(yintercept = 1) +
+#   coord_flip() +
+#   scale_y_continuous(trans = "log2")+
+#   labs(main = "Comparison of Procedures", x = "Variable", y = "Hazard Ratio", fill = "Procedure")+
+#   theme_minimal()
+# 
+# 
+# ggsave("output/cox_graph_compare.png", comparison_plot, device = "png", width = 7, height = 8, units = "in")
 
 ```
 
