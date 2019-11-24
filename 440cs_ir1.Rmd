@@ -454,6 +454,8 @@ coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + R
 #summary(pool(coximpute))
 ```
 
+We use multiple imputation by chained equations to impute the missing data. We choose the number of imputations to be ten corresponding to the approximate percentage of missing data in our dataset. The above plots visualize the density of imputed and observed data for select features. The distributions of the imputed data appears to be reasonable when compared to the observed data.
+
 ## Conclusions
 
 ```{r, eval = FALSE}
