@@ -36,7 +36,7 @@ select = dplyr::select
 ```
 ## Introduction
 
-The goal of this case study is to evaluate risk factors for death for Duke Cardiology Patients. Data comes from Duke Databank for Cardiovascular Diseases and includes observations on about ~85,000 patients. As this is medical data, much of the data is missing. In order to account for biases from missing data, we will utilize multiple imputation. We will create and interpret a Cox Model on complete case data in order to evaluate risk factors for death. We will then compare that model to a model built with imputed data in order to evaluate the impact of missing data on the model.
+The goal of this case study is to evaluate risk factors for death for Duke Cardiology Patients. Data comes from Duke Databank for Cardiovascular Diseases and includes observations on about ~85,000 patients after undergoing catheterization. As this is medical data, much of the data is missing. In order to account for biases from missing data, we will utilize multiple imputation. We will create and interpret a Cox Model on complete case data in order to evaluate risk factors for death. We will then compare that model to a model built with imputed data in order to evaluate the impact of missing data on the model.
 
 
 ## Exploratory Data Analysis
@@ -306,7 +306,7 @@ cardio_new = cardio %>%
 ### Kaplan-Meier Curves
 
 
-The plots below depict the Kaplan-Meier curves (the risk of death over time) of variables we found to demonstrate clear effects that we could draw inference from. The plots also include the p-value dervied from conducting log-rank tests on the Kaplan-Meier curves.
+The plots below depict the Kaplan-Meier curves (the risk of death over time) of variables we found to demonstrate clear effects that we could draw inference from. The plots also include the p-value derived from conducting log-rank tests on the Kaplan-Meier curves.
 </br>
 </br>
 The Kaplan-Meier curves are depictions of the variable's survival function over time. The probability of survival begins at 1 (time = 0), and approaches 0 as time goes to infinity. The log-rank test determines whether the differences between a variable's Kaplan-Meier curves are statistically significant. All of the variables examined had p-values <0.0001, implying that they were statistically significant.
@@ -394,15 +394,9 @@ km6 = ggsurvplot(fit_ldl,data=cardio_new,pval=TRUE) +
 
 The Kaplan-Meier curves for the variable gender shows that females have a statistically significant higher risk of dying than males. In addition, the curves show that this difference in risk of death increases as time increases (the slope of the red, male, curve increases faster than the blue, female curve). 
 
-In order to determine whether there was an effect for age, we categorised an individual's age to  be low (<40) or high (>=40). The Kaplan-Meier curves for this variable show a distinguished difference in the risk of death for the two groups. Namely, individuals who are 40 or older have a statisitcally significant increased risk of death. Furthermore, as time passes, this difference increases furhter; in other words, as time passes individuals who are 40 or older have an increasing risk of dying when compared to those under the age of 40. Contextually, this is a reasonable outcome as individuals who are older are more likely to die than their juniors.
+In order to determine whether there was an effect for age, we categorized an individual's age to  be low (<40) or high (>=40). The Kaplan-Meier curves for this variable show a distinguished difference in the risk of death for the two groups. Namely, individuals who are 40 or older have a statistically significant increased risk of death. Furthermore, as time passes, this difference increases further; in other words, as time passes individuals who are 40 or older have an increasing risk of dying when compared to those under the age of 40. Contextually, this is a reasonable outcome as individuals who are older are more likely to die than their juniors.
 
-The Kaplan-Meier curves for congestive heart failure (CHF) severity indicate that individuals who never experienced CHF have the least risk of dying than those have had CHF. Moreover, the risk of dying increases as CHF severity increases. Intuitively, this is a feasible outcome as individuals with the most severe CHF are characterised by an "inability to perform any physical activity without discomfort" and potential discomfort while resting; logically, individuals who experience this level of pain are at higher risk of dying than those with less severe symptoms.
-
-creatinine
-
-cholesterol
-
-ldl
+The Kaplan-Meier curves for congestive heart failure (CHF) severity indicate that individuals who never experienced CHF have the least risk of dying than those have had CHF. Moreover, the risk of dying increases as CHF severity increases. Intuitively, this is a feasible outcome as individuals with the most severe CHF are characterized by an "inability to perform any physical activity without discomfort" and potential discomfort while resting; logically, individuals who experience this level of pain are at higher risk of dying than those with less severe symptoms. We also found significant increased risk in dying associated with high levels of creatinine, cholesterol and LDL.
 
 We will explore these relationships further using Cox proportional hazards regression modelling. Hopefully, the Cox regression methodology will provide more insight into how these differences in risk of dying manifest at a more granular level.
 
@@ -428,14 +422,13 @@ ggsave("output/cox_graph_complete_case.png", ggforest(fit.coxph, data=cardio_new
 ![](output/cox_graph_complete_case.png)
 The forest plot above illustrates the hazard ratios for different values of the covariates explored as estimated through Cox proportional hazards regression modelling. A hazard ratio >1 implies that individuals with the associated value for the covariate have an increased chance of dying. Intuitively, hazard ratios <1 imply that the individual indicate a decreased risk of dying.
 
-In order to run the Cox model, we established that our survival object would measure time with DAYS2LKA as we are working with censored, not interval, data, and we set the event to be 0 if the individual died and 1 if the individual stayed alive. We modelled the survival object using the following covariates: year of cardiac catheter (categorised), age in years (categorised), gender, race, history of smoking (binary), history of cerbrovascular disease (binary), congestive heart failure severity (binary), history of chronic obsructive pulmonary disease (binary), history of diabetes (binary), history of hyperlipidemia (binary), third hear sound (binary), maximum stenosis of left main artery, number of significantly diseased valves.
+In order to run the Cox model, we established that our survival object would measure time with DAYS2LKA as we are working with censored, not interval, data, and we set the event to be 0 if the individual died and 1 if the individual stayed alive. We modeled the survival object using the following covariates: year of cardiac catheter (categorized), age in years (categorized), gender, race, history of smoking (binary), history of cerebrovascular disease (binary), congestive heart failure severity (binary), history of chronic obstructive pulmonary disease (binary), history of diabetes (binary), history of hyperlipidemia (binary), third hear sound (binary), maximum stenosis of left main artery, number of significantly diseased valves.
+
 
 Our forest plot indicates that as an individual's age increases from 18-39 their risk of dying decreases; however, this trend reverses for individuals ages 39 and over. Furthermore, the same trend occurs for white and non-white individuals, where non-white individuals are at higher risk of dying. Moreover, this trend appears in the variable CHFSEV as well, where individuals with a severity of 0 are the least at risk. Interestingly, YRCATH_G has decreasing risk as the group number moves from 1-3, then increases for groups 4-7.
 
+While these conclusions are interesting, the complete case model only is built on about one third of the data, as the rest have missing values. Furthermore, this complete case model is only valid if all the data is MCAR, but, as we mentioned in the missing data section, some variables are likely MAR, such as creatinine levels. As a result, we will proceed with multiple imputations using chained equations (MICE) in order to impute the missing data. We will then use this imputed data to create another cox model, which will address any potential bias from missing data.
 
-[TODO: give context to why the relationship do or don't make sense]
-
-[TODO: justification for why we want to do MICE, why we chose the m we did, etc]
 
 ### Multiple Imputation
 ```{r}
@@ -458,10 +451,10 @@ densityplot(imp)
 
 #note, cant replace formula with formula_call here for some reason
 coximpute = with(imp,coxph(Surv(DAYS2LKA, DEATH) ~ YRCATH_G + AGE_G + GENDER + RACE_G + HXSMOKE + HXCEREB + CHFSEV + HXCOPD + HXDIAB + HXHYL + S3 + LMST + NUMDZV + creatinine_levels + chol_levels + hdl_levels + ldl_levels))
-#summary(pool(coximpute))
+summary(pool(coximpute))
 ```
 
-### Comparison to Complete Case Model
+## Conclusions
 
 ```{r, eval = FALSE}
 #compare methods
@@ -482,7 +475,7 @@ comparison_plot = ggplot(output, aes (x = variable, y = exp(estimate), color = p
   geom_hline(yintercept = 1) +
   coord_flip() +
   scale_y_continuous(trans = "log2")+
-  labs(main = "Comparison of Procedures", x = "Variable", y = "Hazard Ratio", fill = "Procedure")+
+  labs(title = "Comparison of Procedures", x = "Variable", y = "Hazard Ratio", fill = "Procedure")+
   theme_minimal()
 
 
@@ -490,3 +483,39 @@ ggsave("output/cox_graph_compare.png", comparison_plot, device = "png", width = 
 
 ```
 ![](output/cox_graph_compare.png)
+
+The above figure shows the output for our two Cox models: one trained on complete case data, and the other on imputed data generated with MICE. The complete case data is only about one third the size of the MICE data, since observations with missing data were dropped. Additionally, the complete case model under-reports standard error and bias, as it does not account for additional uncertainty resulting from MAR data. The model generated from the imputed data is trained on more data and more accurately evaluates standard errors. Though the model built on imputed data accounts for sampling variation and variance due to having missing data, it has smaller standard errors overall since it is built on about three times more data. We will report conclusions using this model. Some selected conclusions are below. All variables are significant at any reasonable alpha value:
+
+### Demographics
+
+* Year of catheterization: patients having undergone this procedure more recently had slightly higher hazard ratios. Our model predicts patients having undergone this surgery in 2011-2013 have odds of dying that are 11% higher than those undergoing the procedure in 1985-1990. This counter-intuitive finding may be suggestive of differences in when doctors use this procedure. This question is worth examining further.
+* Age: there is a U-shaped pattern in hazard ratio associated with age, indicating that patients who are relatively young or relatively old are most at risk following the procedure. We conjecture that this could be a result of two effects: older patients in general are more likely to die, and younger patients who have this procedure at a young age are likely to be sicker than their peers. Again, this is worth exploring further.
+* Smoking: Individuals with a history of smoking have odds of dying that are 23% higher than their nonsmoking peers
+* Gender: Females have odds of dying 15% higher than men. This result is worth exploring further.
+* Race: African American and other non-white patients have odds of death 14% and 16% higher than white patients respectively.
+
+### Health History
+
+* Congestive Heart Failure Severity: As one would expect, having a history of CHF is associated with higher odds of dying. Patients with the most severe history have odds ratios of dying 2.2 times as high as patients with no history of CHF.
+* S3: Patients with a S3 gallop, or third heart sound, have odds of dying 45% higher than those without.
+* Number of Diseased Vessels: For each additional diseased vessel a patient has, they are expected to have a 16% increase in odds of dying
+* Maximum stenosis of the left main artery: for every additional 10 percent stenosis of the left main artery, odds of dying increase by 0.02%. Though statistically significant, this effect is practically very small.
+* History of hyperlipidemia: patients with a history of hyperlipidemia have odds of dying 17% lower than patients without.
+* History of diabetes: patients with a history of diabetes have odds of dying 57% higher than patients without.
+* History of COPD: patients with a history of COPD have odds of dying 56% higher than patients without.
+* History of cerebrovascular Disease: patients with a history of stroke or other cerebrovascular disease have odds of dying 35% greater than those without
+
+### Lab Measurements
+
+* Low Density Lipid: patients with the highest values for LDL have 7% higher odds of dying than those with the lowest levels.
+* High Density Lipid: patients with the highest values for HDL have 5% lower odds of dying than those with the lowest levels.
+* Creatinine: patients with the highest values for creatinine have 63% higher odds of dying than those with the lowest levels.
+* Cholesterol: patients with the highest values for cholesterol have 13% lower odds of dying than those with the lowest levels.
+
+
+
+
+
+
+
+
