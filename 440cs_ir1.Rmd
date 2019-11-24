@@ -31,6 +31,7 @@ cardio$GENDER = as.factor(cardio$GENDER)
 select = dplyr::select
 ```
 
+###EDA
 ```{r}
 ggplot(cardio, aes(x = DAYS2LKA, fill = DEATH==1)) +
   geom_density(alpha = 0.5) +
@@ -40,6 +41,114 @@ ggplot(cardio, aes(x = DAYS2LKA, fill = DEATH==1)) +
 
 This chart confirms what we expect. We see that most of the early deaths are accounted for but that longer term survivors often lose contact before a confirmed death.
 
+
+####Performing EDA on demographics variables:
+```{r}
+eda_cardio = cardio %>%
+  mutate(DEATHNUM = as.integer(as.character(DEATH)))
+
+genderhist = eda_cardio %>%
+  group_by(GENDER) %>%
+  summarise(death_rate = mean(DEATHNUM))
+
+agehist = eda_cardio %>%
+  mutate(AGE_CAT = as.factor(AGE_G)) %>%
+  group_by(AGE_CAT) %>%
+  summarise(death_rate = mean(DEATHNUM))
+
+racehist = eda_cardio %>%
+  mutate(RACE_CAT = as.factor(RACE_G)) %>%
+  group_by(RACE_CAT) %>%
+  summarise(death_rate = mean(DEATHNUM))
+
+smokehist = eda_cardio %>%
+  group_by(HXSMOKE) %>%
+  summarise(death_rate = mean(DEATHNUM))
+
+yearhist = eda_cardio %>%
+  group_by(YRCATH_G) %>%
+  summarise(death_rate = mean(DEATHNUM))
+
+genderhist$GENDER = as.integer(as.character(genderhist$GENDER))
+genderhist$GENDER[genderhist$GENDER == 1] <- "Female"
+genderhist$GENDER[genderhist$GENDER == 0] <- "Male"
+
+smokehist$HXSMOKE = as.integer(as.character(smokehist$HXSMOKE))
+smokehist$HXSMOKE[smokehist$HXSMOKE == 1] <- "Smoke"
+smokehist$HXSMOKE[smokehist$HXSMOKE == 0] <- "No Smoke"
+
+racehist$RACE_CAT = as.integer(as.character(racehist$RACE_CAT))
+racehist$RACE_CAT[racehist$RACE_CAT == 1] <- "Caucasian"
+racehist$RACE_CAT[racehist$RACE_CAT == 2] <- "African American"
+racehist$RACE_CAT[racehist$RACE_CAT == 3] <- "Other"
+racehist$RACE_CAT[which(is.na(racehist$RACE_CAT))] <- "Missing"
+
+yearhist$YRCATH_G = as.integer(as.character(yearhist$YRCATH_G))
+yearhist$YRCATH_G[yearhist$YRCATH_G == 1] <- "1985-1990"
+yearhist$YRCATH_G[yearhist$YRCATH_G == 2] <- "1991-1994"
+yearhist$YRCATH_G[yearhist$YRCATH_G == 3] <- "1995-1998"
+yearhist$YRCATH_G[yearhist$YRCATH_G == 4] <- "1999-2002"
+yearhist$YRCATH_G[yearhist$YRCATH_G == 5] <- "2003-2006"
+yearhist$YRCATH_G[yearhist$YRCATH_G == 6] <- "2007-2010"
+yearhist$YRCATH_G[yearhist$YRCATH_G == 7] <- "2011-2013"
+
+
+agehist$AGE_CAT = as.integer(as.character(agehist$AGE_CAT))
+agehist$AGE_CAT[agehist$AGE_CAT == 1] <- "18-24"
+agehist$AGE_CAT[agehist$AGE_CAT == 2] <- "25-29"
+agehist$AGE_CAT[agehist$AGE_CAT == 3] <- "30-34"
+agehist$AGE_CAT[agehist$AGE_CAT == 4] <- "35-39"
+agehist$AGE_CAT[agehist$AGE_CAT == 5] <- "40-44"
+agehist$AGE_CAT[agehist$AGE_CAT == 6] <- "45-49"
+agehist$AGE_CAT[agehist$AGE_CAT == 7] <- "50-54"
+agehist$AGE_CAT[agehist$AGE_CAT == 8] <- "55-59"
+agehist$AGE_CAT[agehist$AGE_CAT == 9] <- "60-64"
+agehist$AGE_CAT[agehist$AGE_CAT == 10] <- "65-69"
+agehist$AGE_CAT[agehist$AGE_CAT == 11] <- "70-74"
+agehist$AGE_CAT[agehist$AGE_CAT == 12] <- "75-79"
+agehist$AGE_CAT[agehist$AGE_CAT == 13] <- "80+"
+
+p1 = ggplot(data=racehist, aes(x=RACE_CAT, y=death_rate)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  ggtitle("Death Rate by Race")
+  theme_minimal()
+
+p2 = ggplot(data=smokehist, aes(x=HXSMOKE, y=death_rate)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  ggtitle("Death Rate by Smoking History")
+  theme_minimal()
+
+p3 = ggplot(data=agehist, aes(x=AGE_CAT, y=death_rate)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  ggtitle("Death Rate by Age") + 
+  theme_minimal()
+
+p4 = ggplot(data=genderhist, aes(x=GENDER, y=death_rate)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  ggtitle("Death Rate by Gender") + 
+  theme_minimal()
+
+p5 = ggplot(data=yearhist, aes(x=YRCATH_G, y=death_rate)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  ggtitle("Death Rate by Year of Catetherization") + 
+  theme_minimal()
+
+grid.arrange(
+  grobs = list(p2, p4, p1),
+  widths = c(2, 1, 1),
+  layout_matrix = rbind(c(1, 2, 2),
+                        c(3, 3, 3))
+)
+grid.arrange(p5, p3, nrow = 2)
+
+```
+To explore how demographics of patients relate to death rate, we plotted death rate by smoking history, by gender, by race, by year of catetherization, and by age. We see that smokers have higher death rate than non-smokers, females have higher death rate than males, and Caucasians have the highest death rate followed by Other races, then African Americans. However, these differences are relatively small. On the other hand, we can see a very significant pattern in death rate by year of catetherization as well as age. 
+
+The earlier the catetherization was performed, the higher death rate - this can likely be attributed to progress being made in medicine as catetherization becomes increasingly safer and more effectively treating patients as years progress. 
+
+The youngest and oldest age groups have highest death rates. Death rates for 18-24 year olds are high, then decreases progressively until the 30-34 age group, then increases progressively after that. 
+
+####Exploring Missing Data:
 ```{r}
 cardio_na = sapply(cardio, function(x) sum(is.na(x)))
 cardio_nas = data.frame(cardio_na, colnames(cardio), stringsAsFactors = FALSE) %>% 
@@ -54,17 +163,10 @@ ggplot(cardio_nas, aes(x = colnames.cardio., y = cardio_na_p, fill = colnames.ca
 ```
 
 We see several variables with missing data rates over 50 percent, and many more in the ~20-40% range. 
-```{r,echo=FALSE}
-# md.pattern(cardio %>% dplyr::select(DSSTROKE, DSMI))
-# cardio_aggr <- aggr(cardio,col=mdc(1:2),numbers=TRUE,sortVars=TRUE,
-# labels=names(cardio),cex.axis=.7, gap=3, 
-# ylab=c("Proportion missing","Missingness Pattern"))
-```
 
 Most instances of large missing data are for events that likely never occurred, such as all the "days to first subsequent" variables like DSSTROKE (having a stroke in the future) and DSMI (having a non-fatal myocardianl infarction in the future), or "days to closest previous" variables like DPCABG (having a previous coronary artery bypass surgery).
 
-On the other hand, some variables with a significant amount of missing data do not have easily interpretable explanations. For example laboratory measurements such as LDL_R, HDL_R, and TOTCHOL_R have significant proportions of missing data, but there is no straightforward explanation to why these measurements may not have been recorded for certain patients.  
-
+On the other hand, some variables with a significant amount of missing data do not have easily interpretable explanations. For example laboratory measurements such as LDL_R, HDL_R, and TOTCHOL_R have significant proportions of missing data, but there is no immediate explanation to why these measurements may not have been recorded for certain patients.  
 
 ```{r}
 deathdf = data.frame()
@@ -90,9 +192,7 @@ ggplot(deathdf, aes(name, deathpercentage, fill = subset)) +
          x = "Variable", y = "% Deaths") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-
-In order to investigate how missing data affects the outcome of death, we plotted the percentage of deaths in every variable for the subset where data on the variable is missing, and the subset where data on the variable is observed. Through the graph, we can notice that five specific variables: CHFSEV, CREATININE_R, PULSE_R, S3, and TOTCHOL_R have particularly large differences in percentage deaths for their observed versus missing subsets. For all five variables, there was a higher percentage of deaths for the subset of data that is missing. This suggests that for these variables, there is a possibility that data may be MNAR (missing not at random). 
-
+In order to investigate how missing data affects the outcome of death, we plotted the percentage of deaths in every variable for the subset where data on the variable is missing, and the subset where data on the variable is observed. Through the graph, we can notice that five specific variables: CHFSEV, CREATININE_R, PULSE_R, S3, and TOTCHOL_R have particularly large differences in percentage deaths for their observed versus missing subsets. For all five variables, there was a higher percentage of deaths for the subset of data that is missing. This suggests that for these variables, there is a possibility that data may be MAR (missing at random), since missingness is related to death, an observed variable. 
 
 ```{r}
 marginplot(cardio[, c("CREATININE_R", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
@@ -100,7 +200,7 @@ marginplot(cardio[, c("S3", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch
 
 marginplot(cardio[, c("PULSE_R", "DAYS2LKA")], col = mdc(1:2), cex.numbers = 0.4, pch = 1)
 ```
-We continued to investigate the five aforementioned variables and their effects on DAYS2LKA through margin plots. Although there were no noteworthy differences in distribution for CHSEV and TOTCHOL_R, we did find that missing data seems to effect DAYS2LKA for the variables CREATININE_R, S3, and PULSE_R. For all three of these variables, subsets of missing data have boxplots with higher means, indicating that patients with missing data on these variables died later than patients with observed data. 
+We continued to investigate the five aforementioned variables and their effects on DAYS2LKA through margin plots. Although there were no noteworthy differences in distribution for CHSEV and TOTCHOL_R, we did find that missing data seems to effect DAYS2LKA for the variables CREATININE_R, S3, and PULSE_R. For all three of these variables, subsets of missing data have boxplots with higher means, indicating that patients with missing data on these variables died later than patients with observed data. Again, this suggests possible MAR (missing at random), since missingness is related to days to last known alive, an observed variable. 
 
 We will proceed with visualizations that may help determine any similar patterns for missing data in different variables.
 
@@ -130,7 +230,8 @@ marginplot(cardio[, c("LDL_R", "YRCATH_G")], col = mdc(1:2), cex.numbers = 0.4, 
 Through these margin plots, we can see there is a significant non-overlap in the distribution of YRCATH_G (year of catetherization) data depending on whether the laboratory measurements were missing versus observed. The majority of missing data on all these laboratory measurements comes from early years, while all the observed data comes from later years. A likely explanation is that these laboratory procedures were less common or accessible in the earlier years. From this, we can determine that this data is missing at random (MAR). 
 
 
-Through these exploratory data analysis and missing data visualizations, we can determine that significant portions of missing data are due to either events that never occurred and therefore cannot be recorded, possible negligence in recording certain measurements (MCAR), and reasons that depend on other observed variables, such as less accessible laboratory procedures in earlier years leading to missing data (MAR).
+
+In summary, through these exploratory data analysis and missing data visualizations, we can determine that significant portions of missing data are due to either events that never occurred and therefore cannot be recorded, possible negligence in recording certain measurements (MCAR), and reasons that depend on other observed variables, such as less accessible laboratory procedures in earlier years leading to missing data (MAR). We also note that year of catetherization and age of patient are important variables that have especially significant effects towards death. 
 
 
 ### Build Model
