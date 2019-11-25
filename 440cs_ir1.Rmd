@@ -405,8 +405,7 @@ fit.coxph <- coxph(formula_call, data = cardio_new)
 
 ggsave("output/cox_graph_complete_case.png", ggforest(fit.coxph, data=cardio_new), device = "png", width = 7, height = 8, units = "in")
 ```
-![](output/cox_graph_complete_case.png)
-The forest plot above illustrates the hazard ratios for different values of the covariates explored as estimated through Cox proportional hazards regression modelling. A hazard ratio >1 implies that individuals with the associated value for the covariate have an increased chance of dying. Intuitively, hazard ratios <1 imply that the individual indicate a decreased risk of dying.
+The forest plot for the complete cox model is shown in our apendix. It illustrates the hazard ratios for different values of the covariates explored as estimated through Cox proportional hazards regression modelling. A hazard ratio >1 implies that individuals with the associated value for the covariate have an increased chance of dying. Intuitively, hazard ratios <1 imply that the individual indicate a decreased risk of dying.
 
 In order to run the Cox model, we established that our survival object would measure time with DAYS2LKA as we are working with censored, not interval, data, and we set the event to be 0 if the individual died and 1 if the individual stayed alive. We modeled the survival object using the following covariates: year of cardiac catheter (categorized), age in years (categorized), gender, race, history of smoking (binary), history of cerebrovascular disease (binary), congestive heart failure severity (binary), history of chronic obstructive pulmonary disease (binary), history of diabetes (binary), history of hyperlipidemia (binary), third hear sound (binary), maximum stenosis of left main artery, number of significantly diseased valves.
 
@@ -501,7 +500,8 @@ The above figure shows the output for our two Cox models: one trained on complet
 * Cholesterol: patients with the highest values for cholesterol have 13% lower odds of dying than those with the lowest levels.
 
 
-
+## Appendix: Complete Case Cox Model 
+![](output/cox_graph_complete_case.png)
 
 
 
